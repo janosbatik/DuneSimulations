@@ -1,13 +1,14 @@
-// TODO: sort out the double use of Gradient()
+// TODO
 
 class Dune {
 
-  boolean PRINT_DETAILS = true;
+  boolean PRINT_DETAILS = false;
   boolean PRINT_EVERY_ITERATION = false; // if false it and PRINT_DETAILS is true then it only prints every run of Errode()
+  boolean CIRCLE = true;
 
   MapPnt[][] map;
   int w, h;
-  int resolution = 2; // how many pixels for one block on the map
+  int resolution = 1; // how many pixels for one block on the map
 
   // float minStartingSand = 0.1;
 
@@ -24,19 +25,24 @@ class Dune {
   float ave_l;
   float ave_q;
   int errode_count = 0;
+  int errode_limit = 240;
 
-  Dune() {
-    w = width/resolution;
-    h = height/resolution;
-    wind = new PVector(1, 1);
+  Dune(int dune_px_width, int dune_px_height) {
+    this.w = dune_px_width/resolution;
+    this.h = dune_px_height/resolution;
+    this.wind = new PVector(1, 1);
     wind.setMag(wind_mag);
-    map = new MapPnt[w][h];
+    this.map = new MapPnt[w][h];
     GenerateRandomMap();
 
     PrintDetails();
     //PrintMap();
   }
 
+  Dune(int pxW, int pxH, int errode_limit) {
+    this(pxW, pxH);
+    this.errode_limit = errode_limit;
+  }
 
   color TranslateToGreyScale(float p)
   {
@@ -56,6 +62,32 @@ class Dune {
     }
     updatePixels();
   }
+
+  void Render3D() {
+    pushMatrix();
+    ambient(255, 122, 100);
+    translate(-dune_px_w/2, -dune_px_h/2, 0);
+    noStroke(); 
+    float hMult=2;
+    for (int j = 0; j < h; j++) {
+      beginShape(TRIANGLE_STRIP);
+      for (int i = 0; i < w; i++) {
+        if (CIRCLE) {
+          int radius = min(h, w)/2;
+          if ( pow(i-w/2.0, 2) + pow(j-h/2, 2) > pow(radius, 2)) {
+            continue;
+          }
+        }
+        vertex(i*resolution, j*resolution, map[i][j].h*hMult);
+        if (j < h-1) {
+          vertex(i*resolution, j*resolution+resolution, map[i][j+1].h*hMult);
+        }
+      }
+      endShape();
+    }
+    popMatrix();
+  }
+
   void Errode()
   {
     Errode(1);
@@ -63,28 +95,28 @@ class Dune {
 
   void Errode(int iter)
   {
-    float p;
+    if (errode_count>errode_limit)
+      return;
     float sum_h, sum_q, sum_l;
     for (int i = 0; i < iter; i++) {
       sum_h = sum_q = sum_l = 0;
       max_h  = 0;
       ave_h = 0;
-      for (int x = 0; x < w; x++) {
-        for (int y = 0; y < h; y++) {
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
           PVector l  = HopDistance(x, y);
           float q = QuantityMoved(x, y);
-          map[x][y].RemoveHeight(q);
-          int xl = x + ceil(l.x); 
-          int  yl = y + ceil(l.y);
-          AddHeight(xl, yl, q);
-          p = hf(x, y);
-          max_h = max(p, max_h);
+          MoveQuantity(x, y, l, q);
+
+          max_h = max(hf(x, y), max_h);
           max_l = max(l.mag(), max_l);
-          sum_h += p;
+          sum_h += hf(x, y);
           sum_l += l.mag();
           sum_q += q;
         }
       }
+      UpdateGradient();
+      Creep();
       ave_h = sum_h/(h*w);
       ave_q = sum_q/(h*w);
       ave_l = sum_l/(h*w);
@@ -96,13 +128,7 @@ class Dune {
       PrintDetails();
   }
 
-  void AddHeight(int x, int y, float q)
-  {
-    if (x>=0 && y >=0 && x<w && y<h)
-    {
-      map[x][y].AddHeight(q);
-    }
-  }
+
   void PrintDetails()
   {
     if (!PRINT_DETAILS)
@@ -118,19 +144,18 @@ class Dune {
     println("max_grad:", max_grad);
   }
 
-  /*
-  void Saltation(int x, int y) {
-   
-   PVector l  = HopDistance(x, y);
-   float q = QuantityMoved(x, y);
-   RemoveHeight(x, y, q);
-   int xl = x + ceil(l.x); 
-   int  yl = y + ceil(l.y);
-   if (xl<w && yl < h) {
-   AddHeight(xl, yl, q);
-   }
-   }
-   */
+  void Creep() {
+    PVector l, grad;
+    float q;
+    for (int x = 0; x < w; x++) {
+      for (int y = 0; y < h; y++) {
+        grad = gf(x, y);
+        l = sign(grad);  
+        q = 0.2*q0*tanh(grad.mag());
+        MoveQuantity(x, y, l, q);
+      }
+    }
+  }
 
   PVector HopDistance(int x, int y) {
     PVector grad = Gradient(x, y);
@@ -162,6 +187,17 @@ class Dune {
   float QuantityMoved(int x, int y) {
     float q = q0*(1 - tanh(wind.dot(gf(x, y))));
     return min(hf(x, y), q);
+  }
+
+  void MoveQuantity(int x, int y, PVector l, float q)
+  {
+    map[x][y].RemoveHeight(q);
+    int xl = x + ceil(l.x); 
+    int  yl = y + ceil(l.y);
+    if (xl>=0 && yl >=0 && xl<w && yl<h)
+    {
+      map[xl][yl].AddHeight(q);
+    }
   }
 
   PVector Gradient(int x, int y) {
@@ -224,10 +260,14 @@ class Dune {
         sum_h += p;
       }
     }
-    for (int x = 0; x < w; x++) {
-      for (int y = 0; y < h; y++) {
-        if ( pow(x-w/2.0, 2) + pow(y-h/2, 2) > pow(100, 2))
-          map[x][y] = new MapPnt (0);
+
+    if (CIRCLE) {
+      for (int x = 0; x < w; x++) {
+        for (int y = 0; y < h; y++) {
+          int radius = min(h, w)/2;
+          if ( pow(x-w/2.0, 2) + pow(y-h/2, 2) > pow(radius, 2))
+            map[x][y] = new MapPnt (0);
+        }
       }
     }
     ave_h = sum_h/(h*w);
@@ -313,6 +353,10 @@ class Dune {
     if (n !=0)
       return int(n/abs(n));
     return int(n);
+  }
+
+  PVector sign(PVector p) {
+    return new PVector(sign(p.x), sign(p.y));
   }
 
   float rd(float n, int decimals)
