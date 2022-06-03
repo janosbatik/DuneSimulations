@@ -2,7 +2,7 @@ import peasy.*;
 
 class Camera {
 
-  CameraType camType = CameraType.FIXED;
+  CameraType camType = CameraType.TOPVIEW;
 
   float camZ = 280;
   float camX;
@@ -43,6 +43,9 @@ class Camera {
       float rot = map(mouseX, 0, width, 0, 2*PI);
       rotateZ(rot);
     case TOPVIEW:
+      camera(0, 0, 200, // eyeX, eyeY, eyeZ
+        0, 0, 0.0, // centerX, centerY, centerZ
+        0.0, 0.0, -1.0); // upX, upY, upZ;
       break;
     case PEASY:
 

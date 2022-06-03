@@ -19,7 +19,7 @@ class Dune {
   float threshold_angle = 55;
   float threshold_grad;
 
-  float TEST_HIEGHTBASE = 100;
+  float TEST_HIEGHTBASE = 10;
 
 
   // float minStartingSand = 0.1;
