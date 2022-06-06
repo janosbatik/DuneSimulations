@@ -9,13 +9,6 @@ enum RenderType
     CONCAVITY
 }
 
-enum CameraType {
-  MOVING, 
-    FIXED, 
-    TOPVIEW, 
-    PEASY
-}
-
 enum Concavity
 {
   PEAK,

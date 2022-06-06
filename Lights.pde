@@ -48,7 +48,7 @@ class Sun
     noStroke();
 
     rotateX(radians(60));
-    rotateY(-radians(count++));
+    rotateY(-radians(counter++));
     translate(width/2 + distance_from_center, 0, 0);
     pointLight(255-100, 247-100, 204-100, 0, 0, 0); // bright yellow
     //directionalLight(255, 247, 204, -1, 0, 0);

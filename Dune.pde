@@ -4,15 +4,13 @@ class Dune {
   // debug
   boolean ERRODE_ON_BUTTON_PRESS = false;
   boolean PRINT_DETAILS = false;
-  int PRINT_EVERY_X_ITERATIONS = 10; // if false it and PRINT_DETAILS is true then it only prints every run of Errode()
+  int PRINT_EVERY_X_ITERATIONS = 10; // if PRINT_DETAILS is true, this will print out useful stats ever x interations of errode
 
   // visual settings
-  boolean WRAP = true;
+  boolean WRAP = true;     // sand loops back around the map
   boolean CIRCLE = false;
-  RenderType RENDER_TYPE = RenderType.CONCAVITY;
   color LINE_COLOR = color(255);
   boolean DRAW_WIND_SOCK = false;
-  boolean is_3D;
 
   // algo settings
   boolean CALC_CONCAVITY = true;
@@ -20,6 +18,7 @@ class Dune {
   float max_wind_diviation_angle = 90;
   float wind_noise = 0;
   float wind_noise_incr = 0.1;
+  RenderType render_type = RenderType.TEXTURED; 
 
 
   int resolution = 2; // how many pixels for one block on the map
@@ -33,9 +32,6 @@ class Dune {
 
   float base_h = 10;
   float base_h_mult = 1;
-
-
-  // float minStartingSand = 0.1;
 
   PVector wind = new PVector(1, 1);   // wind vector. Its size corresponds to the wind intensity and its direction to the wind direction
   PVector wind_base;
@@ -61,23 +57,22 @@ class Dune {
   float ave_q;
 
 
-
-
-  Dune(int dune_px_width, int dune_px_height) {
-    this.w = dune_px_width/resolution;
-    this.h = dune_px_height/resolution;
+  Dune(int px_w, int px_h) { 
+    this.w = px_w/resolution;
+    this.h = px_h/resolution;
     this.wind_base = wind.copy();
     wind.setMag(wind_mag);
     this.map = new MapPnt[w][h];
-    Is3D();
     GenerateRandomMap();
-    PrintDetails();
+    Is3D();
     threshold_grad = tan(radians(threshold_angle));
+
+    PrintDetails();
   }
 
-  Dune(int pxW, int pxH, int errode_limit) {
-    this(pxW, pxH);
-    this.errode_limit = errode_limit;
+  Dune(RenderType render_type, int px_w, int px_h) {
+    this(px_w, px_h);
+    this.render_type= render_type;
   }
 
   void Debug()
@@ -96,23 +91,6 @@ class Dune {
     errode_limit++;
   } 
 
-  void Is3D()
-  {
-    switch (RENDER_TYPE) { 
-    case TRIANGLE_STRIPS: 
-    case TEXTURED: 
-    case TEXTURED_WITH_LINES:
-    case X_LINES : 
-    case  Y_LINES:
-    case GRID:
-      is_3D = true;
-      break;
-    case CONCAVITY:
-      is_3D = false;
-      break;
-    }
-  }
-
   void Render()
   {
     if (ERRODE_ON_BUTTON_PRESS)
@@ -127,16 +105,26 @@ class Dune {
     } else {
       dune.Errode();
     }
-    if (is_3D) { 
+    switch(render_type) {
+    case TRIANGLE_STRIPS: 
+    case TEXTURED: 
+    case TEXTURED_WITH_LINES:
+    case X_LINES : 
+    case  Y_LINES:
+    case GRID:
       Render3D();
-    } else {
+      break;
+    case CONCAVITY:
       Render2D();
+      break;
+    default:
+      throw new IllegalArgumentException ("unaccounted render type");
     }
   }
 
   void Render2D()
   {
-    switch (RENDER_TYPE) { 
+    switch (render_type) { 
     case CONCAVITY:
       RenderByConcavity();
       break;
@@ -151,7 +139,7 @@ class Dune {
     ambient(#DD8144); // sand orange lifted from desert photo
     translate(-dune_px_w/2, -dune_px_h/2, 0);
 
-    switch (RENDER_TYPE) { 
+    switch (render_type) { 
     case TRIANGLE_STRIPS: 
     case TEXTURED: 
     case TEXTURED_WITH_LINES:
@@ -171,7 +159,7 @@ class Dune {
 
     noFill();
     stroke(LINE_COLOR);
-    if (RENDER_TYPE == RenderType.Y_LINES || RENDER_TYPE == RenderType.GRID) {
+    if (render_type == RenderType.Y_LINES || render_type == RenderType.GRID) {
       for (int y = 0; y < h; y++) {
 
         beginShape();
@@ -181,7 +169,7 @@ class Dune {
         endShape();
       }
     }
-    if (RENDER_TYPE == RenderType.X_LINES || RENDER_TYPE == RenderType.GRID) {
+    if (render_type == RenderType.X_LINES || render_type == RenderType.GRID) {
 
       for (int x = 0; x < w; x++) {
         if (x%5 != 0)
@@ -197,7 +185,7 @@ class Dune {
 
   void  RenderAsTriangleStrip()
   {
-    switch (RENDER_TYPE) { 
+    switch (render_type) { 
     case TRIANGLE_STRIPS:
       stroke(LINE_COLOR);
       noFill();

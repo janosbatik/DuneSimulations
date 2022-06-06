@@ -80,3 +80,10 @@ class Camera {
     }
   }
 }
+
+enum CameraType {
+  MOVING, 
+    FIXED, 
+    TOPVIEW, 
+    PEASY
+}
