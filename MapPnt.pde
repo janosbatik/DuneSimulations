@@ -1,8 +1,13 @@
 class MapPnt {
 
-  private float h;
+  float h;
   PVector grad;
-  int concavity;
+  float rate_change_x;
+  float rate_change_y;
+  Concavity hor_concavity;
+  Concavity vert_concavity;
+  Concavity convacity;
+  
 
   MapPnt(float h)
   {
@@ -19,13 +24,15 @@ class MapPnt {
     this.grad = new PVector(dx, dy);
   }
 
-  void AddHeight(float hp)
+  float AddHeight(float hp)
   {
-    h += hp;
+    this.h += hp;
+    return this.h;
   }
 
-  void RemoveHeight(float hm)
+  float RemoveHeight(float hm)
   {
-    h = max(0, h - hm);
+    this.h = max(0, h - hm);
+    return this.h;
   }
 }

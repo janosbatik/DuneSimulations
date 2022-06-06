@@ -1,59 +1,68 @@
 Dune dune;
-int dune_px_h = 400;
-int dune_px_w = 400;
-boolean is_3D = true;
+int dune_px_h = 600;
+int dune_px_w = 600;
 
 SaveSketch save;
-boolean SAVE = false; 
+boolean SAVE = false;
+int MAX_FRAMES = 400;
 Lights lights;
 int errodePerDraw = 1;
+
+boolean is_3D = false;
 
 int count;
 Camera cam;
 
-
+boolean DEBUG = false;
 
 void setup() {
+  
   background(255);
   //smooth(2);
-  size(600, 600, P3D);
-  cam = new Camera(this);
-  lights = new Lights();
-  save = new SaveSketch(SAVE);
+  settings();
+  if (is_3D) {
+        cam = new Camera(this);
+    lights = new Lights();
+  }
+  dune = new Dune(dune_px_w, dune_px_h);
+  save = new SaveSketch(SAVE, MAX_FRAMES);
   //noLoop();
   frameRate(20);
-  dune = new Dune(dune_px_w, dune_px_h);
-  dune.Errode(1);
+  
+}
+
+public void settings() {
+  if (is_3D) {
+    size(600, 600, P3D);
+  } else {
+    size(dune_px_w, dune_px_h);
+  }
 }
 
 void keyPressed() {
   if (key=='c') {
     cam.Reset();
   }
-    if (key=='r') {
+  if (key=='r') {
     dune = new Dune(dune_px_w, dune_px_h);
   }
 }
 
 void draw() {
   background(0);
- // dune.Debug();
-    
-  cam.SetCamera();
-  lights.Render();
-  //DrawAxisBox();
-  //dune.Debug();
-   
-  dune.Errode(errodePerDraw);
-  dune.Render3D();
-  
+
+  if (is_3D) {
+    cam.SetCamera();
+    lights.Render();
+  }
+
+  if (DEBUG) {
+    dune.Debug();
+  } else {
+    dune.Render();
+  }
   save.SaveAsAnimation();
-  
 }
-
-
-
-
 
 
 void DrawAxisBox()
@@ -80,8 +89,8 @@ void DrawAxisBox()
 }
 
 
-
-
 void mouseWheel(MouseEvent event) {
-  cam.ScrollToZoom(event);
+  if (is_3D) {
+    cam.ScrollToZoom(event);
+  }
 }

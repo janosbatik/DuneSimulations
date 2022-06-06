@@ -19,14 +19,20 @@ class SaveSketch {
 
   int saveCount = 0;
   boolean overrideGifFiles = true;
-  int maxFrames = 9999;
+  int maxFrames = 1500;
 
-  SaveSketch(boolean allowSave, String _projName)
+  SaveSketch(boolean allowSave, String projName)
   {
     this(allowSave);
-    projName = _projName;
+    this.projName = projName;
   }
-
+  
+  SaveSketch(boolean allowSave, int maxFrames)
+  {
+    this(allowSave);
+    this.maxFrames = maxFrames;
+  }
+  
   SaveSketch(boolean allowSave)
   {
     this.allowSave = allowSave;
@@ -34,7 +40,7 @@ class SaveSketch {
       return;
     if (CLEAR_FILES_ON_LOAD)
       ClearFilesOnLoad();
-    timeStamp = NowString();
+    this.timeStamp = NowString();
   }
 
   void SaveStaticFrameOnKeyPress()
@@ -104,6 +110,10 @@ class SaveSketch {
     saveCount++;
     if (saveCount <= maxFrames ) 
       save(fileName);
+    else{
+      PrintLn("Max frame count reached ending programe");
+      exit();
+    }
   }
 
   private String NowString() {

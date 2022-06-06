@@ -1,12 +1,3 @@
-enum Maps
-{
-  DEFAULT, 
-    TEST_HIGHT, 
-    DEBUG1, 
-    DEBUG2, 
-    FLAT
-}
-
 enum RenderType
 {
   TRIANGLE_STRIPS, 
@@ -14,7 +5,8 @@ enum RenderType
     Y_LINES, 
     GRID, 
     TEXTURED, 
-    TEXTURED_WITH_LINES
+    TEXTURED_WITH_LINES,
+    CONCAVITY
 }
 
 enum CameraType {
@@ -22,4 +14,13 @@ enum CameraType {
     FIXED, 
     TOPVIEW, 
     PEASY
-};
+}
+
+enum Concavity
+{
+  PEAK,
+  TROUGH,
+  INCLINE,
+  DECLINE,
+  FLAT
+}
