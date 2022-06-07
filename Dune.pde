@@ -136,8 +136,9 @@ class Dune {
     if (DRAW_WIND_SOCK) {
       DrawWindVec();
     }
-    ambient(#DD8144); // sand orange lifted from desert photo
-    translate(-dune_px_w/2, -dune_px_h/2, 0);
+    //ambient(#DD8144); // sand orange lifted from desert photo
+    fill(#DD8144);
+    translate(-w*resolution/2, -w*resolution/2, 0);
 
     switch (render_type) { 
     case TRIANGLE_STRIPS: 
@@ -633,7 +634,7 @@ class Dune {
   void DrawWindVec()
   {
     pushMatrix();
-    translate(-(w/2+30), -(h/2+30), 200);
+    translate(-(w*resolution/2+30), -(w*resolution/2+30), 200);
     sphere(5);
     PVector dir = wind.copy();
     dir.normalize().mult(30);

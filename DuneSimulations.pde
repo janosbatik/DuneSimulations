@@ -1,7 +1,7 @@
 Dune dune;
 int dune_px_h = 600;
 int dune_px_w = 600;
-RenderType RENDER_TYPE = RenderType.TEXTURED;
+RenderType RENDER_TYPE = RenderType.CONCAVITY;
 
 SaveSketch save;
 boolean SAVE = false;
@@ -60,6 +60,7 @@ void draw() {
   } else {
     dune.Render();
   }
+  tx.Render();
   save.SaveAsAnimation();
 }
 
