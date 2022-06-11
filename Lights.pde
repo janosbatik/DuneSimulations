@@ -10,7 +10,8 @@ class Lights
   }
 
   void Render() {
-    ambientLight(255,  255,  255);
+    int al = 150;
+    ambientLight(al,  al,  al);
     if (INCLUDE_SUN)
       sun.Render();
     if (ADDITIONAL_DEBUG_LIGHTING)
@@ -23,8 +24,9 @@ class Lights
   //  directionalLight(255, 255, 128, 0, -1, 0); // yellow
     //ambientLight(100, 100, 100);
     
-    int sl = 50;
-  //  directionalLight(10, 10, 10, -1, -1, -1);
+    int sl = 100;
+    directionalLight(sl, sl, sl, -1, -1, -1);
+    sl = 100;
     directionalLight(sl, sl,sl, 0, -1, -0.2);
     directionalLight(sl,sl,sl, -1, 0, -0.2); 
   }
@@ -50,7 +52,9 @@ class Sun
     rotateX(radians(60));
     rotateY(-radians(counter++));
     translate(width/2 + distance_from_center, 0, 0);
+    
     pointLight(255-100, 247-100, 204-100, 0, 0, 0); // bright yellow
+    
     //directionalLight(255, 247, 204, -1, 0, 0);
     if (DRAW_SPHERE)
       sphere(size);

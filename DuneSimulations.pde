@@ -1,11 +1,13 @@
 Dune dune;
 int dune_px_h = 600;
 int dune_px_w = 600;
-RenderType RENDER_TYPE = RenderType.CONCAVITY;
+RenderType RENDER_TYPE = RenderType.TEXTURED;
 
 SaveSketch save;
 boolean SAVE = false;
-int MAX_FRAMES = 400;
+int MAX_FRAMES = 500;
+
+int FRAME_RATE = 20;
 
 Lights lights;
 Camera cam;
@@ -16,7 +18,7 @@ boolean is_3D;
 boolean DEBUG = false;
 
 void setup() {
-  is_3D = Is3D();
+  is_3D = RENDER_TYPE.Is3D();
   background(255);
   //smooth(2);
   settings();
@@ -27,12 +29,13 @@ void setup() {
   dune = new Dune(RENDER_TYPE, dune_px_w, dune_px_h);
   save = new SaveSketch(SAVE, MAX_FRAMES);
   //noLoop();
-  tx = new TextRenderer("this is a test\na multi line test");
-  frameRate(20);
+  loadPixels();
+  tx = new TextRenderer(poem);
+  frameRate(FRAME_RATE);
 }
 
 public void settings() {
-  if (Is3D()) {
+  if (true) {
     size(600, 600, P3D);
   } else {
     size(dune_px_w, dune_px_h);
@@ -40,11 +43,23 @@ public void settings() {
 }
 
 void keyPressed() {
-  if (key=='c') {
+  switch (key)
+  {
+  case 'c':
     cam.Reset();
-  }
-  if (key=='r') {
+    break;
+  case 'r':
     dune = new Dune(RENDER_TYPE, dune_px_w, dune_px_h);
+    break;
+
+  case 'q':
+    RENDER_TYPE = RENDER_TYPE.Prev();
+    dune.render_type =RENDER_TYPE; 
+    break;
+  case 'w':
+    RENDER_TYPE = RENDER_TYPE.Next();
+    dune.render_type =RENDER_TYPE;
+    break;
   }
 }
 
@@ -60,30 +75,12 @@ void draw() {
   } else {
     dune.Render();
   }
-  tx.Render();
+  //tx.Render3D();
   save.SaveAsAnimation();
 }
 
 void mouseWheel(MouseEvent event) {
   if (is_3D) {
     cam.ScrollToZoom(event);
-  }
-}
-
-boolean Is3D()
-{
-  switch(RENDER_TYPE) {
-  case TRIANGLE_STRIPS: 
-  case TEXTURED: 
-  case TEXTURED_WITH_LINES:
-
-  case X_LINES : 
-  case  Y_LINES:
-  case GRID:
-    return true;
-  case CONCAVITY:
-    return false;
-  default:
-    throw new IllegalArgumentException ("unaccounted render type");
   }
 }

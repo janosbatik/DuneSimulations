@@ -12,7 +12,7 @@ class Camera {
   {
     camX = width/2.0;
     camY = height/2.0;
-    camZ = 480;
+    camZ = 525;
     switch(camType)
     {
     case FIXED:
@@ -25,9 +25,9 @@ class Camera {
       camZ = 650;
       break;
     case PEASY:
-      peasyCam = new PeasyCam(parent, 450);
+      peasyCam = new PeasyCam(parent, 525);
       peasyCam.setMinimumDistance(50);
-      peasyCam.setMaximumDistance(1000);
+      peasyCam.setMaximumDistance(730);
       break;
     }
   }
