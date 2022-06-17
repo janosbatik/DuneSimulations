@@ -2,26 +2,31 @@
 
 class Dune {
   // debug
-  boolean ERRODE_ON_BUTTON_PRESS = false;
-  boolean PRINT_DETAILS = true;
+  boolean ERRODE_ON_BUTTON_PRESS = false ;
+  boolean PRINT_DETAILS = false;
   int PRINT_EVERY_X_ITERATIONS = 10; // if PRINT_DETAILS is true, this will print out useful stats ever x interations of errode
 
   // visual settings
   boolean WRAP = true;     // sand loops back around the map
-  boolean CIRCLE = false;
-  color LINE_COLOR = color(255);
-  boolean DRAW_WIND_SOCK = false;
 
-  // algo settings
+
+  // wind settings
+  //PVector wind = new PVector(random(2)-1, random(2)-1);   // wind vector. Its size corresponds to the wind intensity and its direction to the wind direction
+  PVector wind = new PVector(1, 1);
+  PVector wind_base;
+  float wind_mag = 1.2;
   boolean VARIABLE_WIND = true;
-  float max_wind_diviation_angle = 90;
+  float max_wind_diviation_angle = 70;
   float wind_noise = 0;
   float wind_noise_incr = 0.1;
-  RenderType render_type = RenderType.TEXTURED; 
+
+  Renderer renderer;
+  RenderType render_type;
+  RenderType default_3D_render_type = RenderType.TEXTURED; 
+  RenderType default_2D_render_type = RenderType.CONCAVITY_LINEWORK; 
 
 
   int resolution = 2; // how many pixels for one block on the map
-  float height_multiplier = 1;
 
   // blur
   float blur_fact = 0.4;
@@ -32,11 +37,8 @@ class Dune {
   float base_h = 10;
   float base_h_mult = 5;
 
-  PVector wind = new PVector(1, 1);   // wind vector. Its size corresponds to the wind intensity and its direction to the wind direction
-  PVector wind_base;
-  float wind_mag = 1.2;
   float l0 = 16/resolution;       // average hop distance
-  float q0 = 0.1;  // average amount of sand moved [0.1, 1.0]
+  float q0 = 0.2;  // average amount of sand moved [0.1, 1.0]
 
 
   MapPnt[][] map;
@@ -56,7 +58,8 @@ class Dune {
   float ave_q;
 
 
-  Dune(int px_w, int px_h) { 
+  Dune(boolean is_3D, int px_w, int px_h) { 
+    this.render_type= is_3D ? default_3D_render_type : default_2D_render_type;
     Init(px_w, px_h);
   }
 
@@ -71,30 +74,15 @@ class Dune {
     this.h = px_h/resolution;
     this.map = new MapPnt[w][h];
 
-    this.wind_base = wind.copy();
     wind.setMag(wind_mag);
+    this.wind_base = wind.copy();
 
     GenerateRandomMap();
-
+    SetRenderer();
     //threshold_grad = tan(radians(threshold_angle));
 
     PrintDetails();
   }
-  void Debug()
-  {
-    if (keyPressed) {
-      switch (key) {
-      case 's':
-        if (last_csv_saved != errode_count) {
-          SaveToCSV();
-          last_csv_saved = errode_count;
-        }
-        break;
-      }
-    }    
-    Render();
-    errode_limit++;
-  } 
 
   void Render()
   {
@@ -110,126 +98,59 @@ class Dune {
     } else {
       dune.Errode();
     }
+    if (render_type.Is3D()) {
+      renderer.Render3D();
+    } else {
+      renderer.Render2D();
+    }
+  }
+
+  void PrevRenderType()
+  {
+    this.render_type = render_type.Prev();
+    SetRenderer();
+  }
+
+  void NextRenderType()
+  {
+    this.render_type = render_type.Next();
+    SetRenderer();
+  }
+
+  void SetRenderer()
+  {
     switch(render_type) {
     case TRIANGLE_STRIPS: 
     case TEXTURED: 
     case TEXTURED_WITH_LINES:
-    case X_LINES : 
+      renderer = new RendererTriangleStrip(map, render_type, w, h, resolution);
+      break;
+    case X_LINES :
+      renderer = new RendererXLines(map, w, h, resolution);
+      break;
     case  Y_LINES:
+      renderer = new RendererYLines(map, w, h, resolution);
+      break;
     case GRID:
-      Render3D();
+      renderer = new RendererGrid(map, w, h, resolution);
       break;
     case CONCAVITY_DISCRETE:
+      renderer = new RendererDiscreteConcavityMap(map, w, h, resolution);
+      break;
     case CONCAVITY_GRADIENT:
+      renderer = new RendererGradientConcavityMap(map, w, h, resolution);
+      break;
+    case CONCAVITY_LINEWORK:
+      renderer = new RendererConcavityLinework(map, w, h, resolution);
+      break;
     case HEIGHT_GRADIENT:
+      renderer = new RendererGradientHeightMap(map, w, h, resolution);
+      break;
     case HEIGHT_DISCRETE:
-      Render2D();
+      renderer = new RendererDiscreteHeightMap(map, w, h, resolution);
       break;
     default:
       throw new IllegalArgumentException ("unaccounted render type");
-    }
-  }
-
-  void Render2D()
-  {
-    switch (render_type) { 
-    case CONCAVITY_DISCRETE:
-      RenderDescreteConcavityMap();
-      break;
-    case CONCAVITY_GRADIENT:
-      RenderGradientConcavityMap();
-      break;
-    case HEIGHT_GRADIENT:
-      RenderGradientHeightMap();
-      break;
-    case HEIGHT_DISCRETE:
-      RenderDiscreteHeightMap();
-      break;
-    }
-  }
-
-  void Render3D() {
-    pushMatrix();
-    if (DRAW_WIND_SOCK) {
-      DrawWindVec();
-    }
-    //ambient(#DD8144); // sand orange lifted from desert photo
-    fill(#DD8144);
-    translate(-w*resolution/2, -w*resolution/2, 0);
-
-    switch (render_type) { 
-    case TRIANGLE_STRIPS: 
-    case TEXTURED: 
-    case TEXTURED_WITH_LINES:
-      RenderAsTriangleStrip(); 
-      break;
-    case X_LINES : 
-    case  Y_LINES:
-    case GRID:
-      RenderAsCurves();
-      break;
-    }
-    popMatrix();
-  }
-
-  void RenderAsCurves()
-  {
-
-    noFill();
-    stroke(LINE_COLOR);
-    if (render_type == RenderType.Y_LINES || render_type == RenderType.GRID) {
-      for (int y = 0; y < h; y++) {
-
-        beginShape();
-        for (int x = 0; x < w; x++) {
-          curveVertex(x*resolution, y*resolution, hf(x, y)*height_multiplier);
-        }
-        endShape();
-      }
-    }
-    if (render_type == RenderType.X_LINES || render_type == RenderType.GRID) {
-
-      for (int x = 0; x < w; x++) {
-        if (x%5 != 0)
-          continue;
-        beginShape();
-        for (int y = 0; y < h; y++) {  
-          curveVertex(x*resolution, y*resolution, hf(x, y)*height_multiplier);
-        }
-        endShape();
-      }
-    }
-  }
-
-  void  RenderAsTriangleStrip()
-  {
-    switch (render_type) { 
-    case TRIANGLE_STRIPS:
-      stroke(LINE_COLOR);
-      noFill();
-      break;
-    case TEXTURED:
-      noStroke();
-      break;
-    case TEXTURED_WITH_LINES:
-      stroke(0, 0, 0, 100); 
-      break;
-    }
-    for (int j = 0; j < h; j++) {
-      beginShape(TRIANGLE_STRIP);
-      for (int i = 0; i < w; i++) {
-        if (CIRCLE) {
-          int radius = min(h, w)/2;
-          if ( pow(i-w/2.0, 2) + pow(j-h/2, 2) > pow(radius, 2)) {
-            continue;
-          }
-        }
-        vertex(i*resolution, j*resolution, map[i][j].h*height_multiplier);
-        if (j < h-1) {
-          vertex(i*resolution, j*resolution+resolution, map[i][j+1].h*height_multiplier);
-        }
-      }
-      endShape();
     }
   }
 
@@ -263,13 +184,11 @@ class Dune {
           sum_q += q;
         }
       }
-      UpdateHeightStats();
-      UpdateGradient();
-      //Slip();
-      //Creep();
+      //UpdateGradient();
+
       Blur();
       UpdateHeightStats();
-      //ave_h = sum_h/(h*w);
+
       ave_q = sum_q/(h*w);
       ave_l = sum_l/(h*w);
       errode_count++;
@@ -396,35 +315,9 @@ class Dune {
   }
 
   PVector Gradient(int x, int y) {
-
-    /*
-    float dx; 
-     if (x == 0)
-     dx = hf(x, y) - hf(x+1, y);
-     else if (x == w -1)
-     dx = hf(x-1, y) - hf(x, y);
-     else {
-     float dx_left = hf(x-1, y) - hf(x, y);  
-     float dx_right = hf(x, y) - hf(x+1, y);
-     dx = (dx_left + dx_right)/2;
-     }
-     float dy; 
-     if (y == 0)
-     dy = hf(x, y) - hf(x, y+1);
-     else if (y == h - 1)
-     dy = hf(x, y-1) - hf(x, y);
-     else {
-     float y1 = hf(x, y - 1) - hf(x, y);  
-     float y2 = hf(x, y) - hf(x, y+1);
-     dy = (y1 + y2)/2;
-     }
-     */
-
     // simpler gradient calc:
     float dx = x == w - 1 ? 0 : hf(x+1, y) - hf(x, y);
     float dy = y == h - 1 ? 0 : hf(x, y+1) - hf(x, y);
-
-
     max_grad.x = max( abs(max_grad.x), dx);
     max_grad.y = max( abs(max_grad.y), dy);
     return new PVector(dx, dy);
@@ -443,9 +336,22 @@ class Dune {
     UpdateConcavity();
   }
 
+  Concavity CalcConcavity(float grad, float grad_p)
+  {  
+    if (grad > 0 && grad_p > 0)
+      return Concavity.INCLINE;
+    if (grad < 0 && grad_p < 0)
+      return Concavity.DECLINE;
+    if (grad < 0 && grad_p > 0)
+      return Concavity.TROUGH;
+    if (grad > 0 && grad_p < 0)
+      return Concavity.PEAK;
+    return Concavity.FLAT;
+  }
+
   void UpdateConcavity()
   {
-    if (!ShouldCalcConcavity())
+    if (!render_type.BasedOnConcavity())
       return;
     PVector g, g_xp, g_yp;
     for (int x = 0; x < w; x++) {
@@ -470,146 +376,6 @@ class Dune {
         }
       }
     }
-  }
-
-  void RenderByConcavity()
-  {
-
-    RenderDescreteConcavityMap();
-    //RenderGradientConcavityMap();
-  }
-
-  int  gradient_concavity_map_stat_count = 0;
-  float max_rate_change_y;
-  float min_rate_change_y = 0;
-  float max_rate_change_x = 0;
-  float min_rate_change_x = 0;
-
-  void RenderGradientConcavityMap()
-  { 
-
-    if ( gradient_concavity_map_stat_count < 10) {
-      gradient_concavity_map_stat_count++;
-      for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-          max_rate_change_y = max(map[x][y].rate_change_y, max_rate_change_y);
-          max_rate_change_x = max(map[x][y].rate_change_x, max_rate_change_x);
-          min_rate_change_y = min(map[x][y].rate_change_y, min_rate_change_y);
-          min_rate_change_x = min(map[x][y].rate_change_x, min_rate_change_x);
-        }
-      }
-    }
-
-    noStroke();
-    color c;
-    float c_map;
-    background(#d36b26);
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < w; x++) {
-        c_map = map(map[x][y].rate_change_y, min_rate_change_y, max_rate_change_y, 0, 255);
-        c = color(round(c_map), round(c_map/1.93), round(c_map/5.565), 180); 
-        ColorPixels(x, y, c);
-      }
-    }
-    updatePixels();
-  }
-
-  boolean ShouldCalcConcavity()
-  {
-    switch (render_type) {
-    case CONCAVITY_DISCRETE:    
-    case CONCAVITY_GRADIENT:
-      return true;
-    default:
-      return false;
-    }
-  }
-
-  void RenderDescreteConcavityMap()
-  {
-    noStroke();
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < w; x++) {
-        DrawConcavityType(x, y, Concavity.DECLINE, color(#7D3C21, 100));
-        DrawConcavityType(x, y, Concavity.INCLINE, color(#DD8144, 100));
-        DrawConcavityType(x, y, Concavity.TROUGH, color( #231411));
-        DrawConcavityType(x, y, Concavity.PEAK, color(#8F4928));
-      }
-    }
-    updatePixels();
-  }
-
-  void DrawConcavityType(int x, int y, Concavity type, color c)
-  {
-    if (map[x][y].vert_concavity == type || map[x][y].hor_concavity == type) {
-      ColorPixels(x, y, c);
-    }
-  }
-
-  void ColorPixels(int x, int y, color c) {
-    for (int i = 0; i < resolution; i ++) {
-      for (int j = 0; j < resolution; j ++) {
-        pixels[(y*resolution+i)*(w*resolution)+(x*resolution+j)] = c;
-      }
-    }
-  }
-
-
-  Concavity CalcConcavity(float grad, float grad_p)
-  {  
-    if (grad > 0 && grad_p > 0)
-      return Concavity.INCLINE;
-    if (grad < 0 && grad_p < 0)
-      return Concavity.DECLINE;
-    if (grad < 0 && grad_p > 0)
-      return Concavity.TROUGH;
-    if (grad > 0 && grad_p < 0)
-      return Concavity.PEAK;
-    return Concavity.FLAT;
-  }
-
-  void RenderDiscreteHeightMap() {
-    int number_color_bands = 6;
-    color[] colors = new color[number_color_bands];
-    float step = floor(255.0/(number_color_bands-1));
-    for (int i = 0; i < number_color_bands; i++) {
-      colors[i]=DuneColoring(step*i);
-    }
-    float range = max_h - min_h;
-    float interval = range/number_color_bands;
-
-    color c;
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < w; x++) {        
-         c = colors[min(number_color_bands-1,floor((hf(x, y) - min_h)/interval))];
-        ColorPixels(x, y, c);
-      }
-    }
-    updatePixels();
-  }
-
-  color DuneColoring(float n, int opac)
-  {
-    return color(floor(n), round(n/1.93), round(n/5.565), opac);
-  }
-
-  color DuneColoring(float n)
-  {
-    return DuneColoring(n, 255);
-  }
-
-  void RenderGradientHeightMap() {
-
-    color c;
-    float c_map;
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < w; x++) {
-        c_map = map(hf(x, y), min_h, max_h, 0, 255);
-        c = color(round(c_map), round(c_map/1.93), round(c_map/5.565), 180); 
-        ColorPixels(x, y, c);
-      }
-    }
-    updatePixels();
   }
 
   void UpdateHeightStats()
@@ -664,6 +430,7 @@ class Dune {
     ave_h = sum_h/(h*w);
     UpdateGradient();
   }
+
   void SaveToCSV()
   {
     String dir = "data/";
@@ -682,17 +449,6 @@ class Dune {
     hfile.flush(); // Writes the remaining data to the file
     hfile.close(); // Finishes the file
   }
-  void DrawWindVec()
-  {
-    pushMatrix();
-    translate(-(w*resolution/2+30), -(w*resolution/2+30), 200);
-    sphere(5);
-    PVector dir = wind.copy();
-    dir.normalize().mult(30);
-    stroke(255, 0, 0);
-    line(0, 0, 0, dir.x, dir.y, 0);
-    popMatrix();
-  }
 
   void PrintDetails()
   {
@@ -701,6 +457,7 @@ class Dune {
     println("iteration ", errode_count);
     println("____________");
     println("frameRate: ", frameRate);
+    println("wind: ", wind);
     print("max height: ", max_h);
     println(";\tmin height: ", min_h);
     println("ave height:", ave_h);
@@ -757,28 +514,5 @@ class Dune {
     y = y < 0 ? y + 1: y;
     y = y >= h ? y - 1: y;  
     return map[x][y].h;
-  }
-}
-
-class Point
-{
-  int x;
-  int y;
-  int xy;
-  int w = 400/20;
-  int h = 400/20;
-
-  Point(int x, int y)
-  {
-    this.x = x;
-    this.y = y;
-    this.xy = y*w+x;
-  }
-
-  Point(int xy)
-  {
-    this.x = xy%w;
-    this.y = xy/h;
-    this.xy = xy;
   }
 }

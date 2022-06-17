@@ -1,5 +1,3 @@
-// TODO: change from millis to frames. Millis doesnt work when framerate drops because of saving  
-
 class TextRenderer
 {
 
@@ -136,14 +134,15 @@ class TextRenderer
   }
 
   float vel = 0;
-  float acc = 10/FRAME_RATE;
+  float acc = 10.0/FRAME_RATE;
   float sink = 15;
   void OnCompletion()
   {
-
     if (z_offset > 15) {
       vel += acc;
+      
       z_offset = max(15, z_offset - vel);
+      
     } else {
       z_offset -= 0.05;
     }

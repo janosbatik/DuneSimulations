@@ -7,7 +7,7 @@ class MapPnt {
   Concavity hor_concavity;
   Concavity vert_concavity;
   Concavity convacity;
-  
+
 
   MapPnt(float h)
   {
@@ -34,5 +34,23 @@ class MapPnt {
   {
     this.h = max(0, h - hm);
     return this.h;
+  }
+
+  boolean ContainsConcavity(Concavity con)
+  {
+    if ( hor_concavity == con || vert_concavity == con) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+    boolean IsConcavity(Concavity con)
+  {
+    if ( hor_concavity == con && vert_concavity == con) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

@@ -8,9 +8,11 @@ public static enum RenderType
     TEXTURED_WITH_LINES, 
     CONCAVITY_DISCRETE, 
     CONCAVITY_GRADIENT, 
-    HEIGHT_GRADIENT,
-    HEIGHT_DISCRETE;
-    
+    CONCAVITY_LINEWORK, 
+    HEIGHT_GRADIENT, 
+    HEIGHT_DISCRETE
+    ;
+
 
   private static final RenderType[] values = values();
 
@@ -26,11 +28,24 @@ public static enum RenderType
       return true;
     case CONCAVITY_DISCRETE:
     case CONCAVITY_GRADIENT:
+    case CONCAVITY_LINEWORK:
     case HEIGHT_GRADIENT:
     case HEIGHT_DISCRETE:
       return false;
     default:
       throw new IllegalArgumentException ("unaccounted render type");
+    }
+  }
+
+  boolean BasedOnConcavity()
+  {
+    switch (this) {
+    case CONCAVITY_DISCRETE:    
+    case CONCAVITY_GRADIENT:
+    case CONCAVITY_LINEWORK:
+      return true;
+    default:
+      return false;
     }
   }
 
@@ -54,6 +69,18 @@ public static enum RenderType
     }
     return values[(ordinal() - i  + values.length) % values.length];
   }
+}
+
+enum Directions
+{
+  N, 
+    NE, 
+    E, 
+    SE, 
+    S, 
+    SW, 
+    W, 
+    NW;
 }
 
 enum Concavity

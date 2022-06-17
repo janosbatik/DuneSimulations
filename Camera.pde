@@ -5,24 +5,25 @@ class Camera {
   CameraType camType = CameraType.PEASY;
 
   float camX, camY, camZ;
+  float centerX, centerY, centerZ;
+  float upX, upY, upZ;
   PeasyCam peasyCam;
 
 
   Camera(PApplet parent)
   {
-    camX = width/2.0;
-    camY = height/2.0;
-    camZ = 525;
     switch(camType)
     {
     case FIXED:
-      break;
     case MOVING:
+      SetEye(width/2.0, height/2.0, 525);
+      SetCenter(30, 30, 0);
+      SetUp(0, 0, -1);
       break;
     case TOPVIEW:
-      camX = 0;
-      camY = 0;
-      camZ = 650;
+      SetEye(0, 0, 650);
+      SetCenter(0, 0, 0);
+      SetUp(0, 1, 0);
       break;
     case PEASY:
       peasyCam = new PeasyCam(parent, 525);
@@ -38,31 +39,46 @@ class Camera {
     camY = height/2.0;
   }
 
+  void SetEye(float camX, float camY, float camZ) {
+    this.camX = camX;  
+    this.camY = camY; 
+    this.camZ = camZ;
+  }
+  void SetCenter(  float centerX, float centerY, float centerZ) {
+    this.centerX = centerX; 
+    this.centerY = centerY; 
+    this.centerZ = centerZ;
+  }
+  void SetUp(float upX, float upY, float upZ) {
+    this.upX = upX; 
+    this.upY = upY; 
+    this.upZ = upZ;
+  }
+
+
   void SetCamera()
   {
     switch(camType)
     {
     case FIXED:
-      camera(camX, camY, camZ, // eyeX, eyeY, eyeZ
-        30, 30, 0.0, // centerX, centerY, centerZ
-        0.0, 0.0, -1.0); // upX, upY, upZ;
+    case TOPVIEW:
+      InvokeCamera();
       break;
     case MOVING:
-      camera(camX, camY, mouseY+1, // eyeX, eyeY, eyeZ
-        30, 30, 0.0, // centerX, centerY, centerZ
-        0.0, 0.0, -1.0); // upX, upY, upZ
+      camZ = mouseY+1;
+      InvokeCamera();
       float rot = map(mouseX, 0, width, 0, 2*PI);
       rotateZ(rot);
       break;
-    case TOPVIEW:
-      camera(0, 0, camZ, // eyeX, eyeY, eyeZ
-        0, 0, 0.0, // centerX, centerY, centerZ
-        0.0, 1.0, 0); // upX, upY, upZ;
+    case TRIGGERED:
       break;
     case PEASY:
-
       break;
     }
+  }
+
+  void InvokeCamera() {
+    camera(camX, camY, camZ, centerX, centerY, centerZ, upX, upY, upZ);
   }
 
   void ScrollToZoom(MouseEvent event) {
@@ -85,5 +101,6 @@ enum CameraType {
   MOVING, 
     FIXED, 
     TOPVIEW, 
+    TRIGGERED, 
     PEASY
 }
