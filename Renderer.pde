@@ -53,7 +53,20 @@ class Renderer
       }
     }
   }
-
+  
+  boolean IsPointInMap(int x, int y)
+{
+    if  (x < 0 || y < 0)
+      return false;
+    if (x >= w || y >= h)
+      return false;
+    return true; 
+  }
+  
+  boolean IsPointInMap(Point p){
+    return IsPointInMap(p.x, p.y);
+  }
+  
   float hf(int x, int y)
   {    
     x = x < 0 ? x + 1: x;

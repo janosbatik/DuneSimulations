@@ -81,6 +81,26 @@ enum Directions
     SW, 
     W, 
     NW;
+
+  int XMove()
+  {
+    switch (this)
+    {  
+    case N: 
+    case S:
+      return 0;
+    case NE:
+    case E:
+    case SE:
+      return 1;
+    case SW:
+    case W:
+    case NW:
+      return -1;
+    default:
+      return 0;
+    }
+  }
 }
 
 enum Concavity

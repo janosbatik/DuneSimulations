@@ -2,20 +2,20 @@
 
 class Dune {
   // debug
-  boolean ERRODE_ON_BUTTON_PRESS = false ;
+  boolean ERRODE_ON_BUTTON_PRESS = true;
   boolean PRINT_DETAILS = false;
   int PRINT_EVERY_X_ITERATIONS = 10; // if PRINT_DETAILS is true, this will print out useful stats ever x interations of errode
 
   // visual settings
   boolean WRAP = true;     // sand loops back around the map
-
+  int LINE_WORK_RENDERER = 1;
 
   // wind settings
-  //PVector wind = new PVector(random(2)-1, random(2)-1);   // wind vector. Its size corresponds to the wind intensity and its direction to the wind direction
-  PVector wind = new PVector(1, 1);
+  boolean VARIABLE_WIND = true;
+  boolean RANDOM_STARTING_WIND = true;
+  PVector wind = new PVector(1, 1); // wind vector. Its mag set later, direction is all this is important
   PVector wind_base;
   float wind_mag = 1.2;
-  boolean VARIABLE_WIND = true;
   float max_wind_diviation_angle = 70;
   float wind_noise = 0;
   float wind_noise_incr = 0.1;
@@ -26,19 +26,20 @@ class Dune {
   RenderType default_2D_render_type = RenderType.CONCAVITY_LINEWORK; 
 
 
-  int resolution = 2; // how many pixels for one block on the map
+  int resolution; // how many pixels for one block on the map
 
   // blur
   float blur_fact = 0.4;
   // slip
   // float threshold_angle = 55;
-  // float threshold_grad;
+  // float threshold_grad;n
 
   float base_h = 10;
   float base_h_mult = 5;
 
-  float l0 = 16/resolution;       // average hop distance
-  float q0 = 0.2;  // average amount of sand moved [0.1, 1.0]
+  float l0;            // average hop distance
+  float l0_base = 16;  // l0 = l0_base/resolution (this creates more uniform spacing across different resolutions) (16 seems to be a happy number)
+  float q0 = 0.2;      // average amount of sand moved [0.1, 1.0]
 
 
   MapPnt[][] map;
@@ -57,14 +58,9 @@ class Dune {
   float ave_l;
   float ave_q;
 
-
-  Dune(boolean is_3D, int px_w, int px_h) { 
+  Dune(boolean is_3D, int px_w, int px_h, int res) { 
     this.render_type= is_3D ? default_3D_render_type : default_2D_render_type;
-    Init(px_w, px_h);
-  }
-
-  Dune(RenderType render_type, int px_w, int px_h) {
-    this.render_type= render_type;
+    this.resolution = res;
     Init(px_w, px_h);
   }
 
@@ -74,9 +70,11 @@ class Dune {
     this.h = px_h/resolution;
     this.map = new MapPnt[w][h];
 
+    if (RANDOM_STARTING_WIND)
+      wind = new PVector(random(2)-1, random(2)-1);   
     wind.setMag(wind_mag);
     this.wind_base = wind.copy();
-
+    this.l0 = l0_base/resolution;
     GenerateRandomMap();
     SetRenderer();
     //threshold_grad = tan(radians(threshold_angle));
@@ -141,7 +139,19 @@ class Dune {
       renderer = new RendererGradientConcavityMap(map, w, h, resolution);
       break;
     case CONCAVITY_LINEWORK:
-      renderer = new RendererConcavityLinework(map, w, h, resolution);
+      switch(LINE_WORK_RENDERER)
+      {
+      case 1: 
+        renderer = new RendererConcavityLinework1(this, map, w, h, resolution);  
+        break;
+      case 2:
+        renderer = new RendererConcavityLinework2(this, map, w, h, resolution);
+        break;
+        case 3:
+        renderer = new RendererConcavityLinework3(this, map, w, h, resolution);
+        break;
+      }
+
       break;
     case HEIGHT_GRADIENT:
       renderer = new RendererGradientHeightMap(map, w, h, resolution);

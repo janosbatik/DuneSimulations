@@ -9,12 +9,15 @@ class RendererConcavity extends Renderer
   {
     super(map, render_type, w, h, res);
   }
-}
 
-class RendererDiscreteConcavityMap extends RendererConcavity
-{
-  RendererDiscreteConcavityMap(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.CONCAVITY_DISCRETE, w, h, res);
+  boolean ContainsConcavity(int x, int y, Concavity type)
+  {  
+    return map[x][y].ContainsConcavity(type);
+  }
+
+  boolean ContainsConcavity(Point p, Concavity type)
+  {  
+    return ContainsConcavity(p.x, p.y, type);
   }
 
   color GetConcavityColorByType(Concavity type)
@@ -33,19 +36,22 @@ class RendererDiscreteConcavityMap extends RendererConcavity
       return color(0);
     }
   }
+}
+
+class RendererDiscreteConcavityMap extends RendererConcavity
+{
+  RendererDiscreteConcavityMap(MapPnt[][] map, int  w, int  h, int res) {
+    super( map, RenderType.CONCAVITY_DISCRETE, w, h, res);
+  }
 
   void Render() {
     Concavity type;
     color c;
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        for (int i = 0; i < res; i ++) {
-          for (int j = 0; j < res; j ++) {
-            type = random(1) > 0.5 ?  map[x][y].vert_concavity : map[x][y].hor_concavity;
-            c = GetConcavityColorByType(type);
-            pixels[(y*res+i)*(w*res)+(x*res+j)] = c;
-          }
-        }
+        type = x%2 == 0 ?  map[x][y].vert_concavity : map[x][y].hor_concavity;
+        c = GetConcavityColorByType(type);
+        ColorPixels(x, y, c);
       }
     }
     updatePixels();
