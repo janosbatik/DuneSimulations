@@ -26,13 +26,13 @@ class SaveSketch {
     this(allowSave);
     this.projName = projName;
   }
-  
+
   SaveSketch(boolean allowSave, int maxFrames)
   {
     this(allowSave);
     this.maxFrames = maxFrames;
   }
-  
+
   SaveSketch(boolean allowSave)
   {
     this.allowSave = allowSave;
@@ -51,6 +51,29 @@ class SaveSketch {
       if (key == 'c' || key == 'C') {
         SaveStaticFrame();
       }
+    }
+  }
+
+  boolean save_svg_started = false;
+  
+  void SaveSVG()
+  {
+    save_svg_started = true;
+  }
+  
+  void SaveSVGStart() {
+    if (save_svg_started) {
+      String file_name = "frame-####" + "-" + NowString() + ".svg";
+      println("saving frame as svg");
+      beginRecord(SVG, outPutFolder + "svg/" + file_name);
+    }
+  }
+
+  void SaveSVGEnd() {
+    if (save_svg_started) {
+      endRecord();
+      println("frame saved as svg");
+      save_svg_started = false;
     }
   }
 
@@ -99,7 +122,7 @@ class SaveSketch {
     if (!saving)
       return;
     if (saveCount == 0)
-      PrintLn("Starting to save frames");
+      println("Starting to save frames");
     String fileName;
     if (overrideGifFiles)
     {
@@ -108,10 +131,15 @@ class SaveSketch {
       fileName = outPutFolder+contOutPutFolder+timeStamp+"/"+nf(saveCount, 5)+outputFileType;
     }
     saveCount++;
+    if (saveCount%(maxFrames/10)==0) {
+      print(saveCount, " frames saved...    ");
+      println("current frameRate=", frameRate);
+    }
     if (saveCount <= maxFrames ) 
       save(fileName);
-    else{
-      PrintLn("Max frame count reached ending programe");
+    else {
+      println("Max frame count reached ending programe");
+      println(saveCount, " total of frames saved.");
       exit();
     }
   }
