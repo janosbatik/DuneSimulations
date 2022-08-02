@@ -1,17 +1,37 @@
 class RendererConcavityLinework extends RendererConcavity 
 {
   Dune dune;
+
+  
+ // int render_mode_changed_last = 0;
   int number_sketch_lines = 3; 
 
   RendererConcavityLinework(Dune dune, MapPnt[][] map, RenderType render_type, int  w, int  h, int res)
   {
     super(map, render_type, w, h, res);
     this.dune = dune;
+    this.number_render_sections = 3;
   }
+  
+/*
+  void ToggleConcavitiesToRender()
+  {
+    if (keyPressed) {
+      switch (key) {
+      case 't':
+        if (frameCount - render_mode_changed_last > FRAME_RATE*2) {
+          render_mode = (render_mode +1)%3;
+          render_mode_changed_last = frameCount; //<>//
+          println("render mode changed");
+        }
+        break;
+      }
+    }
+  }
+  */
 
   ArrayList<ArrayList<Point>> CreateDuneLines(Concavity type)
   {
-    background(255);
     IntList checked = new IntList();
     ArrayList<ArrayList<Point>> dune_lines = new ArrayList<ArrayList<Point>>(); 
     ArrayList<Point> dune_line;
@@ -31,7 +51,6 @@ class RendererConcavityLinework extends RendererConcavity
         AddToDuneLine(p, dune_line, checked, type);
         dune_lines.add(dune_line);
       } else {
-        checked.append(p.xy);
         continue;
       }
     } 
@@ -39,14 +58,13 @@ class RendererConcavityLinework extends RendererConcavity
   }
 
   void SearchDirection()
-{
-  
-  PVector wind_orth = dune.wind.copy().rotate(HALF_PI);
-  wind_orth.normalize();
-  int x = round(wind_orth.x);
-  int y = round(wind_orth.y);
+  {
 
-}
+    PVector wind_orth = dune.wind.copy().rotate(HALF_PI);
+    wind_orth.normalize();
+    int x = round(wind_orth.x);
+    int y = round(wind_orth.y);
+  }
 
   void DrawDuneLines(ArrayList<ArrayList<Point>> dune_lines, color c)
   {
@@ -79,7 +97,7 @@ class RendererConcavityLinework extends RendererConcavity
       }
     }
   }
-  
+
   void DrawWithCurve(ArrayList<Point> dune_line) {
     noFill();
     Point p;
@@ -113,7 +131,68 @@ class RendererConcavityLinework extends RendererConcavity
     }
     return;
   }
+}
 
+
+
+/* looks good with:
+ * random wind but no variation,
+ * l0_base = 16; q0 = 0.2; base_h = 10; base_h_mult = 5;
+ * 600x600 at 3 resolution
+ */
+
+class RendererConcavityLineworkString extends  RendererConcavityLinework 
+{
+  RendererConcavityLineworkString(Dune dune, MapPnt[][] map, int  w, int  h, int res)
+  {
+    super(dune, map, RenderType.CONCAVITY_LINEWORK_STRING, w, h, res);
+  }
+
+  void Render() {
+    ArrayList<ArrayList<Point>> dune_lines_1 = CreateDuneLines(Concavity.INCLINE);
+    ArrayList<ArrayList<Point>> dune_lines_2 = CreateDuneLines(Concavity.DECLINE);
+   // ToggleConcavitiesToRender();
+
+    if (render_section == 0 || render_section == 1) {
+      DrawDuneLines(dune_lines_1, INCLINE_COLOR);
+    }
+    if (render_section == 0 || render_section == 2) {
+      DrawDuneLines(dune_lines_2, DECLINE_COLOR);
+    }
+  }
+}
+
+/*
+class RendererConcavityLinework2 extends  RendererConcavityLinework 
+ {
+ RendererConcavityLinework2(Dune dune, MapPnt[][] map, int  w, int  h, int res)
+ {
+ super(dune, map, RenderType.CONCAVITY_LINEWORK, w, h, res);
+ }
+ 
+ void Render() {
+ ArrayList<ArrayList<Point>> peak_lines = CreateDuneLines(Concavity.PEAK);
+ ArrayList<ArrayList<Point>> trough_lines = CreateDuneLines(Concavity.TROUGH);
+ DrawDuneLines(peak_lines, PEAK_COLOR);
+ DrawDuneLines(trough_lines, TROUGH_COLOR);
+ }
+ }
+ */
+
+class RendererConcavityLineworkStraight extends  RendererConcavityLinework 
+{
+  PVector dir = new PVector(1, 1);
+  int ch_x_1 = 1;
+  int ch_y_1 = 1;
+
+  int ch_x_2 = -1;
+  int ch_y_2 = 1;
+
+  RendererConcavityLineworkStraight(Dune dune, MapPnt[][] map, int  w, int  h, int res)
+  {
+    super(dune, map, RenderType.CONCAVITY_LINEWORK_STRAIGHT, w, h, res);
+    number_sketch_lines = 1;
+  }
 
   void ConnectTheDots(int x_move, int y_move, Concavity type, color c)
   {
@@ -136,74 +215,76 @@ class RendererConcavityLinework extends RendererConcavity
       }
     }
   }
-}
 
 
 
-/* looks good with:
- * random wind but no variation,
- * l0_base = 16; q0 = 0.2; base_h = 10; base_h_mult = 5;
- * 600x600 at 3 resolution
- */
-
-class RendererConcavityLinework1 extends  RendererConcavityLinework 
-{
-  RendererConcavityLinework1(Dune dune, MapPnt[][] map, int  w, int  h, int res)
+  void DrawDuneLines(int x_move, int y_move, Concavity type)
   {
-    super(dune, map, RenderType.CONCAVITY_LINEWORK, w, h, res);
+    int count = 0;
+    IntList checked = new IntList();
+    Point p;
+    stroke(GetConcavityColorByType(type));
+    for (int xy = 0; xy < (w-1)*(h-1); xy++)
+    {
+      if (checked.hasValue(xy))
+        continue;
+      checked.append(xy);
+      p = new Point(xy);
+      if (!IsPointInMap(p))
+        continue;
+      if (ContainsConcavity(p, type)) {
+        Point end = GetEndPoint(p, x_move, y_move, checked, type);
+        if (!p.Equals(end)) {
+          //stroke(random(255), random(255), random(255));
+          line(p.x*res, p.y*res, end.x*res, end.y*res);
+          count++;
+          if (checked.hasValue(p.xy))
+            continue;
+          // p.DrawLine(end);
+        }
+      } else {
+        continue;
+      }
+    }
+  }
+
+  Point GetEndPoint(Point p, int x_move, int y_move, IntList checked, Concavity type)
+  {
+    Point pn = p.Translate(x_move, y_move);
+    if (!IsPointInMap(pn))
+      return p;
+    checked.append(pn.xy);
+    if (ContainsConcavity(pn, type)) {
+      return GetEndPoint(pn, x_move, y_move, checked, type);
+    }
+    return p;
   }
 
   void Render() {
-    ArrayList<ArrayList<Point>> peak_lines = CreateDuneLines(Concavity.INCLINE);
-    ArrayList<ArrayList<Point>> trough_lines = CreateDuneLines(Concavity.DECLINE);
-    DrawDuneLines(peak_lines, INCLINE_COLOR);
-    DrawDuneLines(trough_lines, DECLINE_COLOR);
-  }
-}
-
-class RendererConcavityLinework2 extends  RendererConcavityLinework 
-{
-  RendererConcavityLinework2(Dune dune, MapPnt[][] map, int  w, int  h, int res)
-  {
-    super(dune, map, RenderType.CONCAVITY_LINEWORK, w, h, res);
+   // ToggleConcavitiesToRender();
+    if (render_section == 0 || render_section == 1)
+    {
+      DrawDuneLines(ch_x_1, ch_y_1, Concavity.INCLINE);
+    }
+    if (render_section == 0 || render_section == 2)
+    {
+      DrawDuneLines(ch_x_2, ch_y_2, Concavity.DECLINE);
+    }
   }
 
-  void Render() {
-    ArrayList<ArrayList<Point>> peak_lines = CreateDuneLines(Concavity.PEAK);
-    ArrayList<ArrayList<Point>> trough_lines = CreateDuneLines(Concavity.TROUGH);
-    DrawDuneLines(peak_lines, PEAK_COLOR);
-    DrawDuneLines(trough_lines, TROUGH_COLOR);
-  }
-}
-
-class RendererConcavityLinework3 extends  RendererConcavityLinework 
-{
-  PVector dir = new PVector(1, 1);
-  int ch_x_1 = -1;
-  int ch_y_1 = -1;
-  
-  int ch_x_2 = -1;
-  int ch_y_2 = 1;
-  
-  RendererConcavityLinework3(Dune dune, MapPnt[][] map, int  w, int  h, int res)
-  {
-    super(dune, map, RenderType.CONCAVITY_LINEWORK, w, h, res);
-    number_sketch_lines = 1;
-  }
-  
-  
-  
-  void Render() {
-    background(255);
+  void RenderInSegments() {
     /*
     ArrayList<ArrayList<Point>> peak_lines = CreateDuneLines(Concavity.PEAK);
-    ArrayList<ArrayList<Point>> trough_lines = CreateDuneLines(Concavity.TROUGH);
-    DrawDuneLines(peak_lines, PEAK_COLOR);
-    DrawDuneLines(trough_lines, TROUGH_COLOR);
-    */
+     ArrayList<ArrayList<Point>> trough_lines = CreateDuneLines(Concavity.TROUGH);
+     DrawDuneLines(peak_lines, PEAK_COLOR);
+     DrawDuneLines(trough_lines, TROUGH_COLOR);
+     */
+  //  ToggleConcavitiesToRender();
     Concavity conc = Concavity.INCLINE;
-    ConnectTheDots(ch_x_1, ch_y_1, conc, GetConcavityColorByType(conc));
+    if (render_section == 0 || render_section == 1)
+      ConnectTheDots(ch_x_1, ch_y_1, conc, GetConcavityColorByType(conc));
     conc = Concavity.DECLINE;
-    ConnectTheDots(ch_x_2, ch_y_2, conc, GetConcavityColorByType(conc));
+    if (render_section == 0 || render_section == 2)
+      ConnectTheDots(ch_x_2, ch_y_2, conc, GetConcavityColorByType(conc));
   }
 }

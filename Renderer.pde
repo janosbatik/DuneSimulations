@@ -7,6 +7,9 @@ class Renderer
   float height_multiplier = 1; // applies to 3D renderings only
   boolean CIRCLE = false;
 
+  int render_section = 0;
+  int number_render_sections = 1;
+
   Renderer(MapPnt[][] map, RenderType render_type, int  w, int  h, int res)
   {
     this.render_type = render_type;
@@ -53,20 +56,20 @@ class Renderer
       }
     }
   }
-  
+
   boolean IsPointInMap(int x, int y)
-{
+  {
     if  (x < 0 || y < 0)
       return false;
     if (x >= w || y >= h)
       return false;
-    return true; 
+    return true;
   }
-  
-  boolean IsPointInMap(Point p){
+
+  boolean IsPointInMap(Point p) {
     return IsPointInMap(p.x, p.y);
   }
-  
+
   float hf(int x, int y)
   {    
     x = x < 0 ? x + 1: x;
@@ -74,5 +77,10 @@ class Renderer
     y = y < 0 ? y + 1: y;
     y = y >= h ? y - 1: y;  
     return map[x][y].h;
+  }
+
+  void NextRenderSection() {
+    render_section = (render_section +1)%number_render_sections;
+    println("selecting next render section: ", render_section, " of ", number_render_sections);
   }
 }

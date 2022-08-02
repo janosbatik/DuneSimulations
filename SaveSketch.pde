@@ -1,5 +1,5 @@
 import java.io.File;
-
+import processing.svg.*;
 
 class SaveSketch {
 
@@ -9,16 +9,17 @@ class SaveSketch {
   String projName = "processing";
   String outPutFolder = "frames/";
   String contOutPutFolder = "animate/";
+  String staticOutPutFolder = "static/";
   String outputFileType = ".png";
   boolean allowSave;
+  int seed;
   boolean saving = false;
-  String timeStamp;
+  String startTime;
 
   boolean CLEAR_FILES_ON_LOAD = true;
   boolean PRINT_PROCESS = true;
 
   int saveCount = 0;
-  boolean overrideGifFiles = true;
   int maxFrames = 1500;
 
   SaveSketch(boolean allowSave, String projName)
@@ -27,9 +28,10 @@ class SaveSketch {
     this.projName = projName;
   }
 
-  SaveSketch(boolean allowSave, int maxFrames)
+  SaveSketch(boolean allowSave, int maxFrames, int seed)
   {
     this(allowSave);
+    this.seed = seed;
     this.maxFrames = maxFrames;
   }
 
@@ -40,7 +42,7 @@ class SaveSketch {
       return;
     if (CLEAR_FILES_ON_LOAD)
       ClearFilesOnLoad();
-    this.timeStamp = NowString();
+    this.startTime = NowString();
   }
 
   void SaveStaticFrameOnKeyPress()
@@ -55,15 +57,15 @@ class SaveSketch {
   }
 
   boolean save_svg_started = false;
-  
+
   void SaveSVG()
   {
     save_svg_started = true;
   }
-  
+
   void SaveSVGStart() {
     if (save_svg_started) {
-      String file_name = "frame-####" + "-" + NowString() + ".svg";
+      String file_name = NowString() + "-frame-####" + "-" + ".svg";
       println("saving frame as svg");
       beginRecord(SVG, outPutFolder + "svg/" + file_name);
     }
@@ -81,7 +83,7 @@ class SaveSketch {
   {
     if (!allowSave)
       return; 
-    String fileName = outPutFolder+projName+"-"+timeStamp+"-"+nf(saveCount++, 3)+outputFileType;
+    String fileName = FileName(contOutPutFolder, true);
     save(fileName);
     PrintLn("Saved frame: "+fileName);
   }
@@ -124,12 +126,7 @@ class SaveSketch {
     if (saveCount == 0)
       println("Starting to save frames");
     String fileName;
-    if (overrideGifFiles)
-    {
-      fileName = outPutFolder+contOutPutFolder+nf(saveCount, 5)+outputFileType;
-    } else {
-      fileName = outPutFolder+contOutPutFolder+timeStamp+"/"+nf(saveCount, 5)+outputFileType;
-    }
+    fileName = FileName(contOutPutFolder, false);
     saveCount++;
     if (saveCount%(maxFrames/10)==0) {
       print(saveCount, " frames saved...    ");
@@ -142,6 +139,18 @@ class SaveSketch {
       println(saveCount, " total of frames saved.");
       exit();
     }
+  }
+
+  private String FileName(String folder, boolean time_stamp)
+  {
+    String file_name = outPutFolder+folder+"seed"+nf(seed);
+
+    if (time_stamp) {
+      file_name += startTime+nf(saveCount, 5)+outputFileType;
+    } else {
+      file_name += nf(saveCount, 5)+outputFileType;
+    }
+    return file_name;
   }
 
   private String NowString() {

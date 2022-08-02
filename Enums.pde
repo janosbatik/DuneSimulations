@@ -8,7 +8,8 @@ public static enum RenderType
     TEXTURED_WITH_LINES, 
     CONCAVITY_DISCRETE, 
     CONCAVITY_GRADIENT, 
-    CONCAVITY_LINEWORK, 
+    CONCAVITY_LINEWORK_STRING,
+    CONCAVITY_LINEWORK_STRAIGHT,
     HEIGHT_GRADIENT, 
     HEIGHT_DISCRETE
     ;
@@ -28,7 +29,8 @@ public static enum RenderType
       return true;
     case CONCAVITY_DISCRETE:
     case CONCAVITY_GRADIENT:
-    case CONCAVITY_LINEWORK:
+    case CONCAVITY_LINEWORK_STRING:
+    case CONCAVITY_LINEWORK_STRAIGHT:
     case HEIGHT_GRADIENT:
     case HEIGHT_DISCRETE:
       return false;
@@ -42,7 +44,19 @@ public static enum RenderType
     switch (this) {
     case CONCAVITY_DISCRETE:    
     case CONCAVITY_GRADIENT:
-    case CONCAVITY_LINEWORK:
+    case CONCAVITY_LINEWORK_STRING:
+    case CONCAVITY_LINEWORK_STRAIGHT:
+      return true;
+    default:
+      return false;
+    }
+  }
+  
+    boolean OutputsGCode()
+  {
+    switch (this) {
+    case CONCAVITY_LINEWORK_STRING:
+    case CONCAVITY_LINEWORK_STRAIGHT:
       return true;
     default:
       return false;

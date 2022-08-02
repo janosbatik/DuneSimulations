@@ -32,6 +32,10 @@ class Point
     return new Point(this.x + x, this.y + y);
   }
 
+  boolean Equals(Point p2) {
+    return this.xy == p2.xy;
+  }
+
   void DrawCircle(float diam)
   {
     circle(this.x_res, this.y_res, diam);

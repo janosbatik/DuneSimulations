@@ -2,16 +2,14 @@
 
 class Dune {
   // debug
-  boolean ERRODE_ON_BUTTON_PRESS = true;
   boolean PRINT_DETAILS = false;
   int PRINT_EVERY_X_ITERATIONS = 10; // if PRINT_DETAILS is true, this will print out useful stats ever x interations of errode
 
   // visual settings
   boolean WRAP = true;     // sand loops back around the map
-  int LINE_WORK_RENDERER = 1;
 
   // wind settings
-  boolean VARIABLE_WIND = true;
+  boolean VARIABLE_WIND = false;
   boolean RANDOM_STARTING_WIND = true;
   PVector wind = new PVector(1, 1); // wind vector. Its mag set later, direction is all this is important
   PVector wind_base;
@@ -23,7 +21,7 @@ class Dune {
   Renderer renderer;
   RenderType render_type;
   RenderType default_3D_render_type = RenderType.TEXTURED; 
-  RenderType default_2D_render_type = RenderType.CONCAVITY_LINEWORK; 
+  RenderType default_2D_render_type = RenderType.CONCAVITY_LINEWORK_STRAIGHT; 
 
 
   int resolution; // how many pixels for one block on the map
@@ -84,18 +82,7 @@ class Dune {
 
   void Render()
   {
-    if (ERRODE_ON_BUTTON_PRESS)
-    {
-      if (keyPressed) {
-        switch (key) {
-        case 'n':
-          Errode();
-          break;
-        }
-      }
-    } else {
-      dune.Errode();
-    }
+
     if (render_type.Is3D()) {
       renderer.Render3D();
     } else {
@@ -138,20 +125,11 @@ class Dune {
     case CONCAVITY_GRADIENT:
       renderer = new RendererGradientConcavityMap(map, w, h, resolution);
       break;
-    case CONCAVITY_LINEWORK:
-      switch(LINE_WORK_RENDERER)
-      {
-      case 1: 
-        renderer = new RendererConcavityLinework1(this, map, w, h, resolution);  
-        break;
-      case 2:
-        renderer = new RendererConcavityLinework2(this, map, w, h, resolution);
-        break;
-        case 3:
-        renderer = new RendererConcavityLinework3(this, map, w, h, resolution);
-        break;
-      }
-
+    case CONCAVITY_LINEWORK_STRAIGHT:
+      renderer = new RendererConcavityLineworkStraight(this, map, w, h, resolution);
+      break;
+    case CONCAVITY_LINEWORK_STRING:
+      renderer = new RendererConcavityLineworkString(this, map, w, h, resolution);
       break;
     case HEIGHT_GRADIENT:
       renderer = new RendererGradientHeightMap(map, w, h, resolution);
