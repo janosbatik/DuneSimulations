@@ -1,6 +1,10 @@
+// TODO: create off screen rendering of print
+// flip draw order
+
+
 import geomerative.*;
 
-final boolean CONFIG_GCODE_KEEP_SVG = true; 
+boolean CONFIG_GCODE_KEEP_SVG = true; 
 final boolean CONFIG_GCODE_WRITE_TO_FILE = true;
 final String CONFIG_GCODE_OUTPUT_FOLDER = "frames/gcode/";
 
@@ -30,30 +34,42 @@ final String CONFIG_GCODE_POST =
   "M84 X Y E ; disable motors\n" +
   "M77 ; Stop print timer\n";
 
-
-String gcode_svg_file;
 boolean penDown = false;
+
+final boolean CONFIG_GCODE_PRINT_PREVIEW = true;
+final boolean CONFIG_GCODE_PRINT_PREVIEW_PRINT_GCODE = true;
+final boolean CONFIG_PRINTPREVIEW_DRAW_TRAVELS = true; 
+PrintPreviewPointObj CONFIG_GCODE_HOME_COORDS = new PrintPreviewPointObj(0, 0, false);
+ArrayList<PrintPreviewPointObj> prtprvw_point_list = new ArrayList<PrintPreviewPointObj>();
+int prtprvw_count = 0;
+
 
 void savePrintSet()
 {
-  for (int i = 0; i < dune.renderer.number_render_sections; i++){
+  if (CONFIG_GCODE_PRINT_PREVIEW)
+    prtprvw_point_list.add(CONFIG_GCODE_HOME_COORDS);
+  CONFIG_GCODE_KEEP_SVG = true;
+  String folder = "seed" + nf(seed, 10) + "-t" + nf(dune.errode_count, 4) + "-" + gcode_NowString();
+  save(CONFIG_GCODE_OUTPUT_FOLDER + folder + ".png"); // save thumbnail
+  for (int i = 0; i < dune.renderer.number_render_sections; i++) {
+    println("saving ", i+1, " of ", dune.renderer.number_render_sections);
     dune.Render();
-    saveGcode("rendsect"+nf(dune.renderer.render_section));
+    String prefix = folder+"/rendsect"+nf(dune.renderer.render_section);
+    saveGcode(prefix);
+    save(gcode_FileName(prefix, ".png"));
     dune.renderer.NextRenderSection();
   }
+  println("\nfinished rendering gcode.");
 }
 
 void saveGcode(String prefix) {
   println("Saving Gcode...");
   /* Write image to temporaray SVG file */
-  gcode_svg_file = gcode_FileName(prefix, ".svg");
-  beginRecord(SVG, gcode_svg_file); 
-  Render();
-  endRecord();
+  String svg_file_name = gcode_SaveSVG(prefix);
 
   /* Generate Gcode */
-  String gcode = __generateGcode();
-  
+  String gcode = __generateGcode(svg_file_name);
+
   if (CONFIG_GCODE_WRITE_TO_FILE) {
     /* Write out the Gcode file */
     String gcode_file_name = gcode_FileName(prefix, ".gcode");
@@ -65,13 +81,23 @@ void saveGcode(String prefix) {
   } else {
     println(gcode);
   }
-  
+
   if (!CONFIG_GCODE_KEEP_SVG) {
-    File file = sketchFile(gcode_svg_file);
+    File file = sketchFile(svg_file_name);
     file.delete();
   }
-  
+
   println("Finished saving Gcode\n");
+}
+
+String gcode_SaveSVG(String prefix)
+{
+  String file_name = gcode_FileName(prefix, ".svg");
+  beginRecord(SVG, file_name); 
+  noFill();
+  Render();
+  endRecord();
+  return file_name;
 }
 
 String gcode_FileName(String prefix, String ext) {
@@ -223,10 +249,22 @@ String __moveTo(float x, float y, boolean penDown) {
     " Y" + str(y+CONFIG_GCODE_YOFFSET_MM) +
     " F" + feed +
     "\n";
+  StorePrintPreviewData(x, y, penDown, gcode);
   if (in_bounds) {
     return gcode;
   } else { 
     return "(ATTEMPTED TO ADD BAD GCODE: " + gcode + ")";
+  }
+}
+
+void StorePrintPreviewData(float x, float y, boolean penDown, String gcode)
+{
+  if (CONFIG_GCODE_PRINT_PREVIEW) {
+    if (CONFIG_GCODE_PRINT_PREVIEW_PRINT_GCODE) {
+      prtprvw_point_list.add(new PrintPreviewPointObj(x, y, penDown, gcode));
+    } else {
+      prtprvw_point_list.add(new PrintPreviewPointObj(x, y, penDown));
+    }
   }
 }
 
@@ -242,18 +280,18 @@ boolean LimitCheck(float x, float y)
   return in_bounds;
 }
 
+int count = 0;
+
 String __drawLine(float x0, float y0, float x1, float y1) {
   String snippet = "";
   ClippedLineResponse ret = line_clipped(x0, y0, x1, y1, 0, 0, CONFIG_GCODE_WIDTH_MM, CONFIG_GCODE_HEIGHT_MM);
-
-  if (ret.reject) {
+  if (ret.reject) {  
     if (penDown) {
       snippet += CONFIG_GCODE_PEN_UP;
       penDown = false;
     }
     return snippet;
   }
-
   snippet += __moveTo(ret.x0, ret.y0, penDown);
   if (!penDown) {
     snippet += CONFIG_GCODE_PEN_DOWN;
@@ -269,27 +307,32 @@ String __drawLine(float x0, float y0, float x1, float y1) {
   return snippet;
 }
 
-String __generateGcode() {
+RPoint[][] gcode_SVGToPointArray(String svg_file)
+{
   RShape grp;
   RPoint[][] paths;
   boolean ignoringStyles = false;
-  String gcode = CONFIG_GCODE_PRE;
 
   /* Load SVG file and convert to paths */
   RG.init(this);
   RG.ignoreStyles(ignoringStyles);
   RG.setPolygonizer(RG.ADAPTATIVE);
-  grp = RG.loadShape(gcode_svg_file);
+  grp = RG.loadShape(svg_file);
   grp.centerIn(g, 0, 0, 0);
   paths = grp.getPointsInPaths();
+  return paths;
+}
 
+String __generateGcode(String svg_file) {
+  String gcode = CONFIG_GCODE_PRE;
+  RPoint[][] paths = gcode_SVGToPointArray(svg_file);
   for (int i = 0; i < paths.length; i++) {
     if (paths[i] == null)
       continue;
-
     //boolean outOfClip = true;
     float lastx = 0;
     float lasty = 0;
+    gcode += "(starting path " + nf(i) + " of " + nf(paths.length) + ")\n";
     for (int j = 0; j < paths[i].length; j++) {
       //vertex(pointPaths[i][j].x, pointPaths[i][j].y);
       float xmapped = map(paths[i][j].x, 0, width, 0, CONFIG_GCODE_WIDTH_MM);
@@ -325,4 +368,57 @@ String gcode_NowString() {
     +nf(hour(), 2)+"h"
     +nf(minute(), 2)+"m"
     +nf(second(), 2);
+}
+
+
+/*
+//
+ //  PRINT PREVIEW
+ //
+ */
+
+
+class PrintPreviewPointObj {
+  float x;
+  float y;
+  boolean penDown;
+  String gcode;
+
+  PrintPreviewPointObj(float x, float y, boolean penDown, String gcode) {
+    this(x, y, penDown);
+    this.gcode = gcode;
+  }
+
+  PrintPreviewPointObj(float x, float y, boolean penDown)
+  {
+    this.x = map(x, 0, CONFIG_GCODE_WIDTH_MM, 0, width);
+    this.y = map(y, 0, CONFIG_GCODE_HEIGHT_MM, 0, height);
+    this.penDown = penDown;
+  }
+}
+
+boolean PrintPreview() {
+
+  if (prtprvw_count == 0)
+    background(255); // clear background
+  if (prtprvw_count>=prtprvw_point_list.size()-1) {
+    return true;
+  }
+  PrintPreviewPointObj p1, p2;
+  p1 = prtprvw_point_list.get(prtprvw_count);
+  p2 = prtprvw_point_list.get(prtprvw_count+1);
+  if (p1.penDown) {
+    stroke(0);
+  } else {
+    stroke(255, 0, 0, 10);
+  }
+  pushMatrix();
+  rotate(PI);
+  translate(-width, -height);
+  line(p1.x, p1.y, p2.x, p2.y);
+  popMatrix();
+  if (CONFIG_GCODE_PRINT_PREVIEW_PRINT_GCODE)
+    print(p2.gcode);
+  prtprvw_count ++;
+  return false;
 }

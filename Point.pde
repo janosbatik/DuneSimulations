@@ -45,7 +45,12 @@ class Point
   {
     line(this.x_res, this.y_res, p2.x_res, p2.y_res);
   }
-
+  
+  float Distance(Point p2)
+  {
+    return sqrt(pow(this.x - p2.x, 2)+pow(this.y-p2.y, 2));
+  }
+  
   void Print()
   {
     println("x: ", this.x, "y: ", this.y);

@@ -81,6 +81,5 @@ class Renderer
 
   void NextRenderSection() {
     render_section = (render_section +1)%number_render_sections;
-    println("selecting next render section: ", render_section, " of ", number_render_sections);
   }
 }

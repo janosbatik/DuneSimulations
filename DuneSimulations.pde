@@ -1,5 +1,3 @@
-
-
 Dune dune;
 int dune_px_h = 600;
 int dune_px_w = 600;
@@ -7,13 +5,14 @@ int dune_px_w = 600;
 int seed;
 
 boolean is_3D = false;
+boolean print_preview_active = false;
 
 SaveSketch save;
 boolean SAVE = false;
 int MAX_FRAMES = 300;
 
 int FRAME_RATE = 20;
-int RESOLUTION = 6;
+int RESOLUTION = 20;
 
 boolean ERRODE_ON_BUTTON_PRESS_ONLY = true;
 
@@ -34,7 +33,7 @@ void setup() {
   seed = ceil(random(2147483647)); 
   randomSeed(seed);
   noiseSeed(seed);
-  
+
   dune = new Dune(is_3D, dune_px_w, dune_px_h, RESOLUTION);
   save = new SaveSketch(SAVE, MAX_FRAMES, seed);
   loadPixels();
@@ -85,8 +84,15 @@ void keyPressed() {
       dune.Errode();
     }
     break;
+  case 't':
+    saveGcode("test");
+    background(255); 
+    print_preview_active = true;
+    break;
   }
 }
+
+
 
 void Render() {
   background(255, 255);
@@ -105,7 +111,13 @@ void Render() {
 }
 
 void draw() {
-  Render();
+  if (print_preview_active) {
+    boolean done = PrintPreview();
+    if (done)
+      print_preview_active = false;
+  } else {
+    Render();
+  }
 }
 
 void mouseWheel(MouseEvent event) {
