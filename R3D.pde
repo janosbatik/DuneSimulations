@@ -4,8 +4,8 @@ class Renderer3DLines extends Renderer
   final boolean draw_every_line = false;
   final int draw_every_n_lines = 5;
 
-  Renderer3DLines(MapPnt[][] map, RenderType render_type, int  w, int  h, int res) {
-    super( map, render_type, w, h, res);
+  Renderer3DLines(RenderType render_type) {
+    super(render_type);
   }
 
   boolean ShouldDrawLine(int p)
@@ -23,8 +23,8 @@ class Renderer3DLines extends Renderer
 
 class RendererXLines extends  Renderer3DLines
 {
-  RendererXLines(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.X_LINES, w, h, res);
+  RendererXLines() {
+    super(RenderType.X_LINES);
   }
 
   void Render() {
@@ -35,7 +35,7 @@ class RendererXLines extends  Renderer3DLines
         continue;
       beginShape();
       for (int y = 0; y < h; y++) {  
-        curveVertex(x*res, y*res, hf(x, y)*height_multiplier);
+        curveVertex(x*res, y*res, dune.hf(x, y)*height_multiplier);
       }
       endShape();
     }
@@ -44,8 +44,8 @@ class RendererXLines extends  Renderer3DLines
 
 class RendererYLines extends  Renderer3DLines
 {
-  RendererYLines(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.Y_LINES, w, h, res);
+  RendererYLines() {
+    super(RenderType.Y_LINES);
   }
 
   void Render() {
@@ -56,7 +56,7 @@ class RendererYLines extends  Renderer3DLines
         continue;
       beginShape();
       for (int x = 0; x < w; x++) {
-        curveVertex(x*res, y*res, hf(x, y)*height_multiplier);
+        curveVertex(x*res, y*res, dune.hf(x, y)*height_multiplier);
       }
       endShape();
     }
@@ -68,15 +68,56 @@ class RendererGrid extends  Renderer3DLines
   Renderer xlines;
   Renderer ylines;
 
-  RendererGrid(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.GRID, w, h, res);
-    this.xlines = new RendererXLines(map, w, h, res);
-    this.ylines = new RendererYLines(map, w, h, res);
+  RendererGrid() {
+    super(RenderType.GRID);
+    this.xlines = new RendererXLines();
+    this.ylines = new RendererYLines();
   }
-
+  
+  void AdditionalSetup()
+{
+    this.xlines.Init(this.dune);
+    this.ylines.Init(this.dune);
+}
+  
   void Render() {
     xlines.Render();
     ylines.Render();
+  }
+}
+
+class RendererTextured extends RendererTriangleStrip {
+
+  RendererTextured() {
+    super(RenderType.TEXTURED);
+  }
+
+  void SetStrokeAndFill()
+  {
+    noStroke();
+  }
+}
+class RendererTriangleMesh extends RendererTriangleStrip {
+
+  RendererTriangleMesh() {
+    super(RenderType.TRIANGLE_MESH);
+  }
+
+  void SetStrokeAndFill()
+  {
+    stroke(LINE_COLOR);
+    noFill();
+  }
+}
+class RendererTexturedWithMeshLines extends RendererTriangleStrip {
+
+  RendererTexturedWithMeshLines() {
+    super(RenderType.TEXTURED_WITH_TRIANGLE_MESH);
+  }
+
+  void SetStrokeAndFill()
+  {
+    stroke(0, 0, 0, 100);
   }
 }
 
@@ -84,24 +125,11 @@ class RendererTriangleStrip extends  Renderer
 {
   final color LINE_COLOR = color(255);
 
-  RendererTriangleStrip(MapPnt[][] map, RenderType render_type, int  w, int  h, int res) {
-    super( map, render_type, w, h, res);
+  RendererTriangleStrip(RenderType render_type) {
+    super(render_type);
   }
 
-  void SetStrokeAndFill()
-  {
-    switch (render_type) { 
-    case TRIANGLE_STRIPS:
-      stroke(LINE_COLOR);
-      noFill();
-      break;
-    case TEXTURED:
-      noStroke();
-      break;
-    case TEXTURED_WITH_LINES:
-      stroke(0, 0, 0, 100); 
-      break;
-    }
+  void SetStrokeAndFill() {
   }
 
   void Render() {

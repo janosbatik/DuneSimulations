@@ -1,11 +1,11 @@
 public static enum RenderType
 {
-  TRIANGLE_STRIPS, 
+  TRIANGLE_MESH, 
     X_LINES, 
     Y_LINES, 
     GRID, 
     TEXTURED, 
-    TEXTURED_WITH_LINES, 
+    TEXTURED_WITH_TRIANGLE_MESH, 
     CONCAVITY_DISCRETE, 
     CONCAVITY_GRADIENT, 
     CONCAVITY_LINEWORK_STRING,
@@ -20,9 +20,9 @@ public static enum RenderType
   boolean Is3D()
   {
     switch(this) {
-    case TRIANGLE_STRIPS: 
+    case TRIANGLE_MESH: 
     case TEXTURED: 
-    case TEXTURED_WITH_LINES:
+    case TEXTURED_WITH_TRIANGLE_MESH:
     case X_LINES : 
     case  Y_LINES:
     case GRID:

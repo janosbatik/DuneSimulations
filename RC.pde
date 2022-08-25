@@ -5,9 +5,9 @@ class RendererConcavity extends Renderer
   color DECLINE_COLOR = color(#66717E);    
   color TROUGH_COLOR = color(#D4D6B9);
 
-  RendererConcavity(MapPnt[][] map, RenderType render_type, int  w, int  h, int res)
+  RendererConcavity(RenderType render_type)
   {
-    super(map, render_type, w, h, res);
+    super(render_type);
   }
 
   boolean ContainsConcavity(int x, int y, Concavity type)
@@ -40,8 +40,8 @@ class RendererConcavity extends Renderer
 
 class RendererDiscreteConcavityMap extends RendererConcavity
 {
-  RendererDiscreteConcavityMap(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.CONCAVITY_DISCRETE, w, h, res);
+  RendererDiscreteConcavityMap() {
+    super(RenderType.CONCAVITY_DISCRETE);
   }
 
   void Render() {
@@ -66,8 +66,8 @@ class RendererGradientConcavityMap extends RendererConcavity
   float max_rate_change_x = 0;
   float min_rate_change_x = 0;
 
-  RendererGradientConcavityMap(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.CONCAVITY_GRADIENT, w, h, res);
+  RendererGradientConcavityMap() {
+    super(RenderType.CONCAVITY_GRADIENT);
   }
 
   void Render() {

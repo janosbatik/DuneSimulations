@@ -1,13 +1,10 @@
 class RendererConcavityLinework extends RendererConcavity 
-{
-  Dune dune;
-  
+{ 
   int number_sketch_lines = 3; 
 
-  RendererConcavityLinework(Dune dune, MapPnt[][] map, RenderType render_type, int  w, int  h, int res)
+  RendererConcavityLinework(RenderType render_type)
   {
-    super(map, render_type, w, h, res);
-    this.dune = dune;
+    super(render_type);
     this.number_render_sections = 3;
   }
   
@@ -124,9 +121,9 @@ class RendererConcavityLinework extends RendererConcavity
 
 class RendererConcavityLineworkString extends  RendererConcavityLinework 
 {
-  RendererConcavityLineworkString(Dune dune, MapPnt[][] map, int  w, int  h, int res)
+  RendererConcavityLineworkString()
   {
-    super(dune, map, RenderType.CONCAVITY_LINEWORK_STRING, w, h, res);
+    super(RenderType.CONCAVITY_LINEWORK_STRING);
   }
 
   void Render() {
@@ -170,9 +167,9 @@ class RendererConcavityLineworkStraight extends  RendererConcavityLinework
   int ch_x_2 = -1;
   int ch_y_2 = 1;
 
-  RendererConcavityLineworkStraight(Dune dune, MapPnt[][] map, int  w, int  h, int res)
+  RendererConcavityLineworkStraight()
   {
-    super(dune, map, RenderType.CONCAVITY_LINEWORK_STRAIGHT, w, h, res);
+    super(RenderType.CONCAVITY_LINEWORK_STRAIGHT);
     number_sketch_lines = 1;
   }
 

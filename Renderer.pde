@@ -1,6 +1,7 @@
 class Renderer 
 {
   RenderType render_type;
+  Dune dune;
   MapPnt[][] map;
   int w, h, res;
 
@@ -10,26 +11,44 @@ class Renderer
   int render_section = 0;
   int number_render_sections = 1;
 
-  Renderer(MapPnt[][] map, RenderType render_type, int  w, int  h, int res)
+  Renderer(RenderType render_type)
   {
     this.render_type = render_type;
-    this.w = w;
-    this.h = h;
-    this.res = res;
-    this.map = map;
   }
 
-  void Render()
+  public void Init(Dune dune)
+  {
+    this.dune = dune;
+    this.w = dune.w;
+    this.h = dune.h;
+    this.res = dune.resolution;
+    this.map = dune.map;
+    AdditionalSetup();
+  }
+  
+void AdditionalSetup(){} 
+  
+  void Render() // to be overwritten
   {
   }
 
-  void Render2D()
+  public void RenderDune()
+  {
+    if (this.render_type.Is3D()) {
+      Render3D();
+    } else {
+      Render2D();
+    }
+  }
+
+  private void Render2D()
   {
     Render();
   }
 
-  void Render3D()
+  private void Render3D()
   {
+    background(0);
     pushMatrix();
     //ambient(#DD8144); // sand orange lifted from desert photo
     fill(#DD8144);
@@ -68,15 +87,6 @@ class Renderer
 
   boolean IsPointInMap(Point p) {
     return IsPointInMap(p.x, p.y);
-  }
-
-  float hf(int x, int y)
-  {    
-    x = x < 0 ? x + 1: x;
-    x = x >= w ? x - 1: x;
-    y = y < 0 ? y + 1: y;
-    y = y >= h ? y - 1: y;  
-    return map[x][y].h;
   }
 
   void NextRenderSection() {

@@ -2,9 +2,9 @@ class RendererHeightMap extends Renderer
 {
   float max_h, min_h, ave_h;
   
-  RendererHeightMap(MapPnt[][] map, RenderType render_type, int  w, int  h, int res) {
-    super( map, render_type, w, h, res);
-     UpdateHeightStats();
+  RendererHeightMap(RenderType render_type) {
+    super(render_type);
+    UpdateHeightStats();
   }
   
   void UpdateHeightStats()
@@ -16,7 +16,7 @@ class RendererHeightMap extends Renderer
     ave_h = 0;
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        hxy = hf(x, y);
+        hxy = dune.hf(x, y);
         max_h = max(hxy, max_h);
         min_h = min(hxy, min_h);
         sum_h += hxy;
@@ -28,8 +28,8 @@ class RendererHeightMap extends Renderer
 
 class RendererDiscreteHeightMap extends RendererHeightMap
 {
-  RendererDiscreteHeightMap(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.HEIGHT_DISCRETE, w, h, res);
+  RendererDiscreteHeightMap() {
+    super(RenderType.HEIGHT_DISCRETE);
   }
 
   void Render() {
@@ -46,7 +46,7 @@ class RendererDiscreteHeightMap extends RendererHeightMap
     color c;
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {        
-        c = colors[min(number_color_bands-1, floor((hf(x, y) - min_h)/interval))];
+        c = colors[min(number_color_bands-1, floor((dune.hf(x, y) - min_h)/interval))];
         ColorPixels(x, y, c);
       }
     }
@@ -56,8 +56,8 @@ class RendererDiscreteHeightMap extends RendererHeightMap
 
 class RendererGradientHeightMap extends RendererHeightMap
 {
-  RendererGradientHeightMap(MapPnt[][] map, int  w, int  h, int res) {
-    super( map, RenderType.HEIGHT_GRADIENT, w, h, res);
+  RendererGradientHeightMap() {
+    super(RenderType.HEIGHT_GRADIENT);
   }
 
   void Render() {
@@ -66,7 +66,7 @@ class RendererGradientHeightMap extends RendererHeightMap
     float c_map;
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        c_map = map(hf(x, y), min_h, max_h, 0, 255);
+        c_map = map(dune.hf(x, y), min_h, max_h, 0, 255);
         c = DuneColoring(c_map, 180); 
         ColorPixels(x, y, c);
       }

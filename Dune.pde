@@ -9,19 +9,16 @@ class Dune {
   boolean WRAP = true;     // sand loops back around the map
 
   // wind settings
-  boolean VARIABLE_WIND = false;
+  boolean VARIABLE_WIND = true;
   boolean RANDOM_STARTING_WIND = true;
-  PVector wind = new PVector(1, 1); // wind vector. Its mag set later, direction is all this is important
-  PVector wind_base;
-  float wind_mag = 1.2;
-  float max_wind_diviation_angle = 70;
-  float wind_noise = 0;
-  float wind_noise_incr = 0.1;
+  PVector wind = new PVector(1, 1); // wind vector. Mag set later, direction is all this is important
+  PVector wind_base;                // copy of starting wind vec
+  float wind_mag = 1.2;             // wind magnitude
+  float max_wind_diviation_angle = 70;  // max angle in degrees wind can deviate if VARIABLE_WIND = true
+  float wind_noise = 0;                 // noise counter for variable wind
+  float wind_noise_incr = 0.1;          // increment size through noise space
 
   Renderer renderer;
-  RenderType render_type;
-  RenderType default_3D_render_type = RenderType.TEXTURED; 
-  RenderType default_2D_render_type = RenderType.CONCAVITY_LINEWORK_STRAIGHT; 
 
 
   int resolution; // how many pixels for one block on the map
@@ -56,10 +53,11 @@ class Dune {
   float ave_l;
   float ave_q;
 
-  Dune(boolean is_3D, int px_w, int px_h, int res) { 
-    this.render_type= is_3D ? default_3D_render_type : default_2D_render_type;
+  Dune(Renderer renderer, int px_w, int px_h, int res) { 
+    this.renderer = renderer;
     this.resolution = res;
     Init(px_w, px_h);
+    this.renderer.Init(this);
   }
 
   void Init(int px_w, int px_h)
@@ -74,7 +72,6 @@ class Dune {
     this.wind_base = wind.copy();
     this.l0 = l0_base/resolution;
     GenerateRandomMap();
-    SetRenderer();
     //threshold_grad = tan(radians(threshold_angle));
 
     PrintDetails();
@@ -82,64 +79,7 @@ class Dune {
 
   void Render()
   {
-
-    if (render_type.Is3D()) {
-      renderer.Render3D();
-    } else {
-      renderer.Render2D();
-    }
-  }
-
-  void PrevRenderType()
-  {
-    this.render_type = render_type.Prev();
-    SetRenderer();
-  }
-
-  void NextRenderType()
-  {
-    this.render_type = render_type.Next();
-    SetRenderer();
-  }
-
-  void SetRenderer()
-  {
-    switch(render_type) {
-    case TRIANGLE_STRIPS: 
-    case TEXTURED: 
-    case TEXTURED_WITH_LINES:
-      renderer = new RendererTriangleStrip(map, render_type, w, h, resolution);
-      break;
-    case X_LINES :
-      renderer = new RendererXLines(map, w, h, resolution);
-      break;
-    case  Y_LINES:
-      renderer = new RendererYLines(map, w, h, resolution);
-      break;
-    case GRID:
-      renderer = new RendererGrid(map, w, h, resolution);
-      break;
-    case CONCAVITY_DISCRETE:
-      renderer = new RendererDiscreteConcavityMap(map, w, h, resolution);
-      break;
-    case CONCAVITY_GRADIENT:
-      renderer = new RendererGradientConcavityMap(map, w, h, resolution);
-      break;
-    case CONCAVITY_LINEWORK_STRAIGHT:
-      renderer = new RendererConcavityLineworkStraight(this, map, w, h, resolution);
-      break;
-    case CONCAVITY_LINEWORK_STRING:
-      renderer = new RendererConcavityLineworkString(this, map, w, h, resolution);
-      break;
-    case HEIGHT_GRADIENT:
-      renderer = new RendererGradientHeightMap(map, w, h, resolution);
-      break;
-    case HEIGHT_DISCRETE:
-      renderer = new RendererDiscreteHeightMap(map, w, h, resolution);
-      break;
-    default:
-      throw new IllegalArgumentException ("unaccounted render type");
-    }
+    renderer.RenderDune();
   }
 
   void Errode()
@@ -192,7 +132,8 @@ class Dune {
     wind.rotate(rot);
     wind_noise += wind_noise_incr;
   }
-
+  
+/*
   void Creep() {
     PVector l, grad;
     float q;
@@ -207,6 +148,7 @@ class Dune {
       }
     }
   }
+*/
 
   /*
   void Slip() {
@@ -339,7 +281,7 @@ class Dune {
 
   void UpdateConcavity()
   {
-    if (!render_type.BasedOnConcavity())
+    if (!renderer.render_type.BasedOnConcavity())
       return;
     PVector g, g_xp, g_yp;
     for (int x = 0; x < w; x++) {
